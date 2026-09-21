@@ -15,7 +15,8 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
     public IReadOnlyCollection<GeneratedFile> Generate(
         DatabaseEngine engine,
         string tableName,
-        IReadOnlyCollection<TableColumn> columns)
+        IReadOnlyCollection<TableColumn> columns,
+        string rootNamespace)
     {
         var primaryKey = columns.Single(column => column.IsPrimaryKey);
         var insertableColumns = columns.Where(column => !column.IsPrimaryKey).ToArray();
@@ -23,6 +24,7 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
 
         var model = new CrudTemplateModel
         {
+            RootNamespace = rootNamespace,
             TableName = tableName,
             PluralName = tableName.Pluralize(),
             CamelName = tableName.Camelize(),

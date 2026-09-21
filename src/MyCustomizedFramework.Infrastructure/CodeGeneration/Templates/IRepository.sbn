@@ -1,6 +1,6 @@
-using MyCustomizedFramework.Domain.{{ plural_name }};
+using {{ root_namespace }}.Domain.{{ plural_name }};
 
-namespace MyCustomizedFramework.Application.Abstractions.Persistence;
+namespace {{ root_namespace }}.Application.Abstractions.Persistence;
 
 public interface I{{ table_name }}Repository
 {

@@ -24,7 +24,7 @@ public sealed class GenerateCrudHandlerTests
             new StubSchemaProviderFactory(new StubSchemaProvider([])),
             new StubCrudFileGenerator([]));
 
-        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Ghost"));
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Ghost", "MyCustomizedFramework"));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.Error.Type);
@@ -42,7 +42,7 @@ public sealed class GenerateCrudHandlerTests
             new StubSchemaProviderFactory(new StubSchemaProvider(noKeyColumns)),
             new StubCrudFileGenerator([]));
 
-        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "NoKey"));
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "NoKey", "MyCustomizedFramework"));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.Error.Type);
@@ -61,7 +61,7 @@ public sealed class GenerateCrudHandlerTests
             new StubSchemaProviderFactory(new StubSchemaProvider(compositeKeyColumns)),
             new StubCrudFileGenerator([]));
 
-        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Composite"));
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Composite", "MyCustomizedFramework"));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.Error.Type);
@@ -75,7 +75,7 @@ public sealed class GenerateCrudHandlerTests
             new StubSchemaProviderFactory(new StubSchemaProvider(SingleKeyColumns)),
             new StubCrudFileGenerator(expectedFiles));
 
-        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Student"));
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "Student", "MyCustomizedFramework"));
 
         Assert.True(result.IsSuccess);
         Assert.Same(expectedFiles, result.Value);
@@ -103,6 +103,7 @@ public sealed class GenerateCrudHandlerTests
         public IReadOnlyCollection<GeneratedFile> Generate(
             DatabaseEngine engine,
             string tableName,
-            IReadOnlyCollection<TableColumn> columns) => files;
+            IReadOnlyCollection<TableColumn> columns,
+            string rootNamespace) => files;
     }
 }

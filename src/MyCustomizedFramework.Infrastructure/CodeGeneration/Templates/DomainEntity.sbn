@@ -1,4 +1,4 @@
-namespace MyCustomizedFramework.Domain.{{ plural_name }};
+namespace {{ root_namespace }}.Domain.{{ plural_name }};
 
 public sealed class {{ table_name }}
 {

@@ -1,4 +1,4 @@
-namespace MyCustomizedFramework.Infrastructure.Persistence.{{ plural_name }};
+namespace {{ root_namespace }}.Infrastructure.Persistence.{{ plural_name }};
 
 /// <summary>Flat row shape used only by Dapper to materialize query results for {{ table_name }}.</summary>
 internal sealed class {{ table_name }}DbEntity

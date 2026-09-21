@@ -1,6 +1,6 @@
-using MyCustomizedFramework.Domain.Common;
+using {{ root_namespace }}.Domain.Common;
 
-namespace MyCustomizedFramework.Application.{{ plural_name }};
+namespace {{ root_namespace }}.Application.{{ plural_name }};
 
 public interface I{{ table_name }}Service
 {

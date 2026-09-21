@@ -1,8 +1,8 @@
-using MyCustomizedFramework.Application.Abstractions.Persistence;
-using MyCustomizedFramework.Domain.Common;
-using MyCustomizedFramework.Domain.{{ plural_name }};
+using {{ root_namespace }}.Application.Abstractions.Persistence;
+using {{ root_namespace }}.Domain.Common;
+using {{ root_namespace }}.Domain.{{ plural_name }};
 
-namespace MyCustomizedFramework.Application.{{ plural_name }};
+namespace {{ root_namespace }}.Application.{{ plural_name }};
 
 public sealed class {{ table_name }}Service(I{{ table_name }}Repository repository) : I{{ table_name }}Service
 {

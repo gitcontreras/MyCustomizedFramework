@@ -23,6 +23,10 @@ public static class CrudMapper
             request.User,
             request.Password);
 
-        return Result.Success(new GenerateCrudQuery(connection, engineResult.Value, request.TableName));
+        var rootNamespace = string.IsNullOrWhiteSpace(request.RootNamespace)
+            ? "MyCustomizedFramework"
+            : request.RootNamespace.Trim();
+
+        return Result.Success(new GenerateCrudQuery(connection, engineResult.Value, request.TableName, rootNamespace));
     }
 }

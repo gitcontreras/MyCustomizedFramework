@@ -1,9 +1,9 @@
 using System.Data;
 using Dapper;
-using MyCustomizedFramework.Application.Abstractions.Persistence;
-using MyCustomizedFramework.Domain.{{ plural_name }};
+using {{ root_namespace }}.Application.Abstractions.Persistence;
+using {{ root_namespace }}.Domain.{{ plural_name }};
 
-namespace MyCustomizedFramework.Infrastructure.Persistence.{{ plural_name }};
+namespace {{ root_namespace }}.Infrastructure.Persistence.{{ plural_name }};
 
 /// <summary>
 /// Dapper-based repository for {{ table_name }}. <see cref="IDbConnectionFactory"/> is provided by the

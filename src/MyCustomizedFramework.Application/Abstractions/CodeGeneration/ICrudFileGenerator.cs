@@ -10,5 +10,6 @@ public interface ICrudFileGenerator
     IReadOnlyCollection<GeneratedFile> Generate(
         DatabaseEngine engine,
         string tableName,
-        IReadOnlyCollection<TableColumn> columns);
+        IReadOnlyCollection<TableColumn> columns,
+        string rootNamespace);
 }

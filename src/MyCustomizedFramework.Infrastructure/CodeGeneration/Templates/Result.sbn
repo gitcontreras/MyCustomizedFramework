@@ -1,4 +1,4 @@
-namespace MyCustomizedFramework.Application.{{ plural_name }};
+namespace {{ root_namespace }}.Application.{{ plural_name }};
 
 public sealed record {{ table_name }}Result(
 {{~ for column in columns ~}}

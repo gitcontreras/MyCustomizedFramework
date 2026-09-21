@@ -6,6 +6,10 @@ namespace MyCustomizedFramework.Infrastructure.CodeGeneration;
 /// </summary>
 internal sealed class CrudTemplateModel
 {
+    /// <summary>Replaces this solution's own "MyCustomizedFramework" prefix in every generated
+    /// namespace/using, so the output drops in ready to compile in a differently-named target solution.</summary>
+    public required string RootNamespace { get; init; }
+
     public required string TableName { get; init; }
 
     public required string PluralName { get; init; }

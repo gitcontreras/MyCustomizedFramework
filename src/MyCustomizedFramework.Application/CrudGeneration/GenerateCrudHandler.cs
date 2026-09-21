@@ -50,7 +50,7 @@ public sealed class GenerateCrudHandler(ISchemaProviderFactory schemaProviderFac
                         $"Table '{query.TableName}' must have exactly one primary key column; composite keys are not supported yet."));
             }
 
-            var files = crudFileGenerator.Generate(query.Engine, query.TableName, columns);
+            var files = crudFileGenerator.Generate(query.Engine, query.TableName, columns, query.RootNamespace);
 
             return Result.Success(files);
         }
