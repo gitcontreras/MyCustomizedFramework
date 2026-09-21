@@ -56,4 +56,8 @@ internal sealed class ColumnModel
     public required bool IsNullable { get; init; }
 
     public required bool IsPrimaryKey { get; init; }
+
+    /// <summary>A valid C# literal for this column's type (e.g. "1", "\"sample\"", "Guid.NewGuid()"),
+    /// used only by the generated ServiceTests to build a sample entity without guessing real business data.</summary>
+    public required string SampleValue { get; init; }
 }

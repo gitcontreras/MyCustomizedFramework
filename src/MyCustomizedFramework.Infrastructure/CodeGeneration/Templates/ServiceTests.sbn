@@ -1,0 +1,142 @@
+using {{ root_namespace }}.Application.Abstractions.Persistence;
+using {{ root_namespace }}.Application.{{ plural_name }};
+using {{ root_namespace }}.Domain.Common;
+using {{ root_namespace }}.Domain.{{ plural_name }};
+using Xunit;
+
+namespace {{ root_namespace }}.UnitTests.Application.{{ plural_name }};
+
+/// <summary>
+/// Stubs I{{ table_name }}Repository by hand (no mocking library) to test {{ table_name }}Service's Result
+/// pattern branching without a database - the same pattern this generator's own framework tests use.
+/// </summary>
+public sealed class {{ table_name }}ServiceTests
+{
+    private static readonly {{ table_name }} Sample{{ table_name }} = {{ table_name }}.Create(
+{{~ for column in columns ~}}
+        {{ column.sample_value }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    );
+
+    private static readonly {{ table_name }}Request Sample{{ table_name }}Request = new(
+{{~ for column in insertable_columns ~}}
+        {{ column.sample_value }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    );
+
+    [Fact]
+    public async Task Add{{ table_name }}Async_ReturnsSuccessAndMappedResult()
+    {
+        var repository = new StubRepository { EntityToReturn = Sample{{ table_name }} };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Add{{ table_name }}Async(Sample{{ table_name }}Request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(Sample{{ table_name }}.{{ primary_key.name }}, result.Value.{{ primary_key.name }});
+    }
+
+    [Fact]
+    public async Task GetAll{{ plural_name }}Async_ReturnsAllMappedResults()
+    {
+        var repository = new StubRepository { EntityToReturn = Sample{{ table_name }} };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.GetAll{{ plural_name }}Async();
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value);
+    }
+
+    [Fact]
+    public async Task Get{{ table_name }}ByIdAsync_ReturnsNotFound_WhenRepositoryReturnsNull()
+    {
+        var repository = new StubRepository { EntityToReturn = null };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Get{{ table_name }}ByIdAsync({{ primary_key.sample_value }});
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task Get{{ table_name }}ByIdAsync_ReturnsSuccess_WhenFound()
+    {
+        var repository = new StubRepository { EntityToReturn = Sample{{ table_name }} };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Get{{ table_name }}ByIdAsync({{ primary_key.sample_value }});
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(Sample{{ table_name }}.{{ primary_key.name }}, result.Value.{{ primary_key.name }});
+    }
+
+    [Fact]
+    public async Task Update{{ table_name }}ByIdAsync_ReturnsNotFound_WhenNotFound()
+    {
+        var repository = new StubRepository { EntityToReturn = null };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Update{{ table_name }}ByIdAsync({{ primary_key.sample_value }}, Sample{{ table_name }}Request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task Update{{ table_name }}ByIdAsync_ReturnsSuccess_WhenFound()
+    {
+        var repository = new StubRepository { EntityToReturn = Sample{{ table_name }} };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Update{{ table_name }}ByIdAsync({{ primary_key.sample_value }}, Sample{{ table_name }}Request);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Delete{{ table_name }}ByIdAsync_ReturnsNotFound_WhenNothingWasDeleted()
+    {
+        var repository = new StubRepository { DeleteResult = false };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Delete{{ table_name }}ByIdAsync({{ primary_key.sample_value }});
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task Delete{{ table_name }}ByIdAsync_ReturnsSuccess_WhenDeleted()
+    {
+        var repository = new StubRepository { DeleteResult = true };
+        var service = new {{ table_name }}Service(repository);
+
+        var result = await service.Delete{{ table_name }}ByIdAsync({{ primary_key.sample_value }});
+
+        Assert.True(result.IsSuccess);
+    }
+
+    private sealed class StubRepository : I{{ table_name }}Repository
+    {
+        public {{ table_name }}? EntityToReturn { get; set; }
+
+        public bool DeleteResult { get; set; }
+
+        public Task<{{ primary_key.type }}> AddAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default) =>
+            Task.FromResult(EntityToReturn!.{{ primary_key.name }});
+
+        public Task<IReadOnlyCollection<{{ table_name }}>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyCollection<{{ table_name }}>>(EntityToReturn is null ? [] : [EntityToReturn]);
+
+        public Task<{{ table_name }}?> GetByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default) =>
+            Task.FromResult(EntityToReturn);
+
+        public Task<bool> UpdateAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+
+        public Task<bool> DeleteAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default) =>
+            Task.FromResult(DeleteResult);
+    }
+}

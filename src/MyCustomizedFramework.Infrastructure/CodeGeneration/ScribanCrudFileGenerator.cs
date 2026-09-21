@@ -49,7 +49,8 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
             new GeneratedFile($"Application/I{tableName}Repository.cs", Render("IRepository", model)),
             new GeneratedFile($"Infrastructure/{tableName}Repository.cs", Render("Repository", model)),
             new GeneratedFile($"Application/I{tableName}Service.cs", Render("IService", model)),
-            new GeneratedFile($"Application/{tableName}Service.cs", Render("Service", model))
+            new GeneratedFile($"Application/{tableName}Service.cs", Render("Service", model)),
+            new GeneratedFile($"Tests/{tableName}ServiceTests.cs", Render("ServiceTests", model))
         ];
     }
 
@@ -59,7 +60,27 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
         CamelName = column.Name.Camelize(),
         Type = column.CSharpType,
         IsNullable = column.IsNullable,
-        IsPrimaryKey = column.IsPrimaryKey
+        IsPrimaryKey = column.IsPrimaryKey,
+        SampleValue = BuildSampleValue(column.CSharpType)
+    };
+
+    private static string BuildSampleValue(string csharpType) => csharpType.TrimEnd('?') switch
+    {
+        "string" => "\"sample\"",
+        "int" => "1",
+        "long" => "1L",
+        "short" => "(short)1",
+        "byte" => "(byte)1",
+        "decimal" => "1m",
+        "double" => "1d",
+        "float" => "1f",
+        "bool" => "true",
+        "DateTime" => "DateTime.UtcNow",
+        "DateTimeOffset" => "DateTimeOffset.UtcNow",
+        "TimeSpan" => "TimeSpan.Zero",
+        "Guid" => "Guid.NewGuid()",
+        "byte[]" => "[]",
+        _ => "default!"
     };
 
     private static string MapToDbTypeName(string csharpType) => csharpType.TrimEnd('?') switch
@@ -79,7 +100,11 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
 
     private static Dictionary<string, Template> LoadTemplates()
     {
-        string[] names = ["DomainEntity", "DbEntity", "Request", "Result", "IRepository", "Repository", "IService", "Service"];
+        string[] names =
+        [
+            "DomainEntity", "DbEntity", "Request", "Result", "IRepository", "Repository", "IService", "Service",
+            "ServiceTests"
+        ];
 
         return names.ToDictionary(
             name => name,

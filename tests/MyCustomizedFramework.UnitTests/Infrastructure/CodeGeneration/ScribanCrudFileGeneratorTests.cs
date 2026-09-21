@@ -14,13 +14,13 @@ public sealed class ScribanCrudFileGeneratorTests
     ];
 
     [Fact]
-    public void GenerateProducesTheEightExpectedFilesForSqlServer()
+    public void GenerateProducesTheNineExpectedFilesForSqlServer()
     {
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
 
-        Assert.Equal(8, files.Count);
+        Assert.Equal(9, files.Count);
         Assert.Contains(files, file => file.RelativePath == "Domain/Student.cs");
         Assert.Contains(files, file => file.RelativePath == "Infrastructure/StudentDbEntity.cs");
         Assert.Contains(files, file => file.RelativePath == "Application/StudentRequest.cs");
@@ -29,6 +29,7 @@ public sealed class ScribanCrudFileGeneratorTests
         Assert.Contains(files, file => file.RelativePath == "Infrastructure/StudentRepository.cs");
         Assert.Contains(files, file => file.RelativePath == "Application/IStudentService.cs");
         Assert.Contains(files, file => file.RelativePath == "Application/StudentService.cs");
+        Assert.Contains(files, file => file.RelativePath == "Tests/StudentServiceTests.cs");
     }
 
     [Fact]
@@ -99,6 +100,22 @@ public sealed class ScribanCrudFileGeneratorTests
         Assert.Contains("using Acme.Payroll.Domain.Common;", service);
         Assert.DoesNotContain("MyCustomizedFramework", entity);
         Assert.DoesNotContain("MyCustomizedFramework", service);
+    }
+
+    [Fact]
+    public void GenerateServiceTestsStubTheRepositoryAndCoverEveryServiceMethod()
+    {
+        var generator = new ScribanCrudFileGenerator();
+
+        var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
+        var tests = files.Single(file => file.RelativePath == "Tests/StudentServiceTests.cs").Content;
+
+        Assert.Contains("public sealed class StudentServiceTests", tests);
+        Assert.Contains("private sealed class StubRepository : IStudentRepository", tests);
+        Assert.Contains("Task AddStudentAsync_ReturnsSuccessAndMappedResult()", tests);
+        Assert.Contains("Task GetStudentByIdAsync_ReturnsNotFound_WhenRepositoryReturnsNull()", tests);
+        Assert.Contains("Task UpdateStudentByIdAsync_ReturnsSuccess_WhenFound()", tests);
+        Assert.Contains("Task DeleteStudentByIdAsync_ReturnsSuccess_WhenDeleted()", tests);
     }
 
     [Fact]
