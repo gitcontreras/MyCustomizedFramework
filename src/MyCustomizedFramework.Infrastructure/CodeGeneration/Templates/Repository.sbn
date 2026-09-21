@@ -1,0 +1,110 @@
+using System.Data;
+using Dapper;
+using MyCustomizedFramework.Application.Abstractions.Persistence;
+using MyCustomizedFramework.Domain.{{ plural_name }};
+
+namespace MyCustomizedFramework.Infrastructure.Persistence.{{ plural_name }};
+
+/// <summary>
+/// Dapper-based repository for {{ table_name }}. <see cref="IDbConnectionFactory"/> is provided by the
+/// host application - wire it up once in your own DI composition to point at your real, configured
+/// database (this generator only inspected a database to read the schema; it does not own the
+/// connection your finished app will use at runtime).
+/// </summary>
+public sealed class {{ table_name }}Repository(IDbConnectionFactory connectionFactory) : I{{ table_name }}Repository
+{
+    public async Task<{{ primary_key.type }}> AddAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var parameters = new DynamicParameters();
+{{~ for column in insertable_columns ~}}
+        parameters.Add("{{ column.name }}", {{ camel_name }}.{{ column.name }});
+{{~ end ~}}
+
+{{~ if engine == "Oracle" ~}}
+        parameters.Add("{{ primary_key.name }}", dbType: DbType.{{ oracle_primary_key_db_type }}, direction: ParameterDirection.Output);
+
+        await connection.ExecuteAsync(new CommandDefinition(InsertSql, parameters, cancellationToken: cancellationToken));
+
+        return parameters.Get<{{ primary_key.type }}>("{{ primary_key.name }}");
+{{~ else ~}}
+        var command = new CommandDefinition(InsertSql, parameters, cancellationToken: cancellationToken);
+
+        return await connection.QuerySingleAsync<{{ primary_key.type }}>(command);
+{{~ end ~}}
+    }
+
+    public async Task<IReadOnlyCollection<{{ table_name }}>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var command = new CommandDefinition(SelectAllSql, cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<{{ table_name }}DbEntity>(command);
+
+        return rows.Select(MapToEntity).ToArray();
+    }
+
+    public async Task<{{ table_name }}?> GetByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var command = new CommandDefinition(SelectByIdSql, new { {{ primary_key.name }} = id }, cancellationToken: cancellationToken);
+        var row = await connection.QuerySingleOrDefaultAsync<{{ table_name }}DbEntity>(command);
+
+        return row is null ? null : MapToEntity(row);
+    }
+
+    public async Task<bool> UpdateAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var parameters = new DynamicParameters();
+{{~ for column in insertable_columns ~}}
+        parameters.Add("{{ column.name }}", {{ camel_name }}.{{ column.name }});
+{{~ end ~}}
+        parameters.Add("{{ primary_key.name }}", {{ camel_name }}.{{ primary_key.name }});
+
+        var command = new CommandDefinition(UpdateSql, parameters, cancellationToken: cancellationToken);
+        var affectedRows = await connection.ExecuteAsync(command);
+
+        return affectedRows > 0;
+    }
+
+    public async Task<bool> DeleteAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionFactory.CreateConnection();
+        var command = new CommandDefinition(DeleteSql, new { {{ primary_key.name }} = id }, cancellationToken: cancellationToken);
+        var affectedRows = await connection.ExecuteAsync(command);
+
+        return affectedRows > 0;
+    }
+
+    private static {{ table_name }} MapToEntity({{ table_name }}DbEntity row) =>
+        {{ table_name }}.Create(
+{{~ for column in columns ~}}
+            row.{{ column.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+        );
+
+    private const string InsertSql =
+        """
+        {{ insert_sql }}
+        """;
+
+    private const string SelectAllSql =
+        """
+        {{ select_all_sql }}
+        """;
+
+    private const string SelectByIdSql =
+        """
+        {{ select_by_id_sql }}
+        """;
+
+    private const string UpdateSql =
+        """
+        {{ update_sql }}
+        """;
+
+    private const string DeleteSql =
+        """
+        {{ delete_sql }}
+        """;
+}

@@ -11,4 +11,9 @@ public interface ISchemaProvider
     Task<IReadOnlyCollection<DatabaseTable>> GetTablesAsync(
         DatabaseConnectionDetails connection,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
+        DatabaseConnectionDetails connection,
+        string tableName,
+        CancellationToken cancellationToken = default);
 }

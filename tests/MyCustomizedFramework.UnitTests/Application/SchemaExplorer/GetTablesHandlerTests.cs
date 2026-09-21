@@ -69,12 +69,23 @@ public sealed class GetTablesHandlerTests
         public Task<IReadOnlyCollection<DatabaseTable>> GetTablesAsync(
             DatabaseConnectionDetails connection,
             CancellationToken cancellationToken = default) => Task.FromResult(tables);
+
+        public Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
+            DatabaseConnectionDetails connection,
+            string tableName,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyCollection<TableColumn>>([]);
     }
 
     private sealed class ThrowingSchemaProvider : ISchemaProvider
     {
         public Task<IReadOnlyCollection<DatabaseTable>> GetTablesAsync(
             DatabaseConnectionDetails connection,
+            CancellationToken cancellationToken = default) => throw new FakeDbException("Connection refused.");
+
+        public Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
+            DatabaseConnectionDetails connection,
+            string tableName,
             CancellationToken cancellationToken = default) => throw new FakeDbException("Connection refused.");
     }
 

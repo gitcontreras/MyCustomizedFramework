@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MyCustomizedFramework.Domain\MyCustomizedFramework.Domain.csproj" />
     <ProjectReference Include="..\..\src\MyCustomizedFramework.Application\MyCustomizedFramework.Application.csproj" />
+    <ProjectReference Include="..\..\src\MyCustomizedFramework.Infrastructure\MyCustomizedFramework.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

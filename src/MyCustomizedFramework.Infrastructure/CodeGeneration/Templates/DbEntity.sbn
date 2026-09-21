@@ -1,0 +1,9 @@
+namespace MyCustomizedFramework.Infrastructure.Persistence.{{ plural_name }};
+
+/// <summary>Flat row shape used only by Dapper to materialize query results for {{ table_name }}.</summary>
+internal sealed class {{ table_name }}DbEntity
+{
+{{~ for column in columns ~}}
+    public {{ column.type }} {{ column.name }} { get; set; } = default!;
+{{~ end ~}}
+}

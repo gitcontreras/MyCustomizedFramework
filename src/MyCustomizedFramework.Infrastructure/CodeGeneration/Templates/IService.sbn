@@ -1,0 +1,16 @@
+using MyCustomizedFramework.Domain.Common;
+
+namespace MyCustomizedFramework.Application.{{ plural_name }};
+
+public interface I{{ table_name }}Service
+{
+    Task<Result<{{ table_name }}Result>> Add{{ table_name }}Async({{ table_name }}Request request, CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyCollection<{{ table_name }}Result>>> GetAll{{ plural_name }}Async(CancellationToken cancellationToken = default);
+
+    Task<Result<{{ table_name }}Result>> Get{{ table_name }}ByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default);
+
+    Task<Result<{{ table_name }}Result>> Update{{ table_name }}ByIdAsync({{ primary_key.type }} id, {{ table_name }}Request request, CancellationToken cancellationToken = default);
+
+    Task<Result> Delete{{ table_name }}ByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default);
+}

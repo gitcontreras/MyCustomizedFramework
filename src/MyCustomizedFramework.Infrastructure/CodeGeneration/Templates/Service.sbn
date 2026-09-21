@@ -1,0 +1,84 @@
+using MyCustomizedFramework.Application.Abstractions.Persistence;
+using MyCustomizedFramework.Domain.Common;
+using MyCustomizedFramework.Domain.{{ plural_name }};
+
+namespace MyCustomizedFramework.Application.{{ plural_name }};
+
+public sealed class {{ table_name }}Service(I{{ table_name }}Repository repository) : I{{ table_name }}Service
+{
+    public async Task<Result<{{ table_name }}Result>> Add{{ table_name }}Async({{ table_name }}Request request, CancellationToken cancellationToken = default)
+    {
+        var {{ camel_name }} = {{ table_name }}.Create(
+{{~ for column in columns ~}}
+{{~ if column.is_primary_key ~}}
+            default{{ if !for.last }},{{ end }}
+{{~ else ~}}
+            request.{{ column.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+{{~ end ~}}
+        );
+
+        var id = await repository.AddAsync({{ camel_name }}, cancellationToken);
+        var created = await repository.GetByIdAsync(id, cancellationToken);
+
+        return created is null
+            ? Result.Failure<{{ table_name }}Result>(Error.Failure("{{ table_name }}.NotFoundAfterInsert", "The record was inserted but could not be read back."))
+            : Result.Success(ToResult(created));
+    }
+
+    public async Task<Result<IReadOnlyCollection<{{ table_name }}Result>>> GetAll{{ plural_name }}Async(CancellationToken cancellationToken = default)
+    {
+        var rows = await repository.GetAllAsync(cancellationToken);
+        IReadOnlyCollection<{{ table_name }}Result> results = rows.Select(ToResult).ToArray();
+
+        return Result.Success(results);
+    }
+
+    public async Task<Result<{{ table_name }}Result>> Get{{ table_name }}ByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default)
+    {
+        var {{ camel_name }} = await repository.GetByIdAsync(id, cancellationToken);
+
+        return {{ camel_name }} is null
+            ? Result.Failure<{{ table_name }}Result>(Error.NotFound("{{ table_name }}.NotFound", $"{{ table_name }} '{id}' was not found."))
+            : Result.Success(ToResult({{ camel_name }}));
+    }
+
+    public async Task<Result<{{ table_name }}Result>> Update{{ table_name }}ByIdAsync({{ primary_key.type }} id, {{ table_name }}Request request, CancellationToken cancellationToken = default)
+    {
+        var existing = await repository.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+        {
+            return Result.Failure<{{ table_name }}Result>(Error.NotFound("{{ table_name }}.NotFound", $"{{ table_name }} '{id}' was not found."));
+        }
+
+        var updated = {{ table_name }}.Create(
+{{~ for column in columns ~}}
+{{~ if column.is_primary_key ~}}
+            id{{ if !for.last }},{{ end }}
+{{~ else ~}}
+            request.{{ column.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+{{~ end ~}}
+        );
+
+        await repository.UpdateAsync(updated, cancellationToken);
+
+        return Result.Success(ToResult(updated));
+    }
+
+    public async Task<Result> Delete{{ table_name }}ByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default)
+    {
+        var deleted = await repository.DeleteAsync(id, cancellationToken);
+
+        return deleted
+            ? Result.Success()
+            : Result.Failure(Error.NotFound("{{ table_name }}.NotFound", $"{{ table_name }} '{id}' was not found."));
+    }
+
+    private static {{ table_name }}Result ToResult({{ table_name }} {{ camel_name }}) =>
+        new(
+{{~ for column in columns ~}}
+            {{ camel_name }}.{{ column.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+        );
+}

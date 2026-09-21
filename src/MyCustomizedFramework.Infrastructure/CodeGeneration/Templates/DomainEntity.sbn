@@ -1,0 +1,37 @@
+namespace MyCustomizedFramework.Domain.{{ plural_name }};
+
+public sealed class {{ table_name }}
+{
+    private {{ table_name }}(
+{{~ for column in columns ~}}
+        {{ column.type }} {{ column.camel_name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    )
+    {
+{{~ for column in columns ~}}
+        {{ column.name }} = {{ column.camel_name }};
+{{~ end ~}}
+    }
+
+{{~ for column in columns ~}}
+    public {{ column.type }} {{ column.name }} { get; private set; }
+{{~ end ~}}
+
+    public static {{ table_name }} Create(
+{{~ for column in columns ~}}
+        {{ column.type }} {{ column.camel_name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    )
+    {
+{{~ for column in columns ~}}
+{{~ if !column.is_nullable && (column.type == "string") ~}}
+        ArgumentException.ThrowIfNullOrWhiteSpace({{ column.camel_name }});
+{{~ end ~}}
+{{~ end ~}}
+        return new {{ table_name }}(
+{{~ for column in columns ~}}
+            {{ column.camel_name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+        );
+    }
+}

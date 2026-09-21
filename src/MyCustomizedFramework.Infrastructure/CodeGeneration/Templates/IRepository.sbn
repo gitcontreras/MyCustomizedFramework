@@ -1,0 +1,16 @@
+using MyCustomizedFramework.Domain.{{ plural_name }};
+
+namespace MyCustomizedFramework.Application.Abstractions.Persistence;
+
+public interface I{{ table_name }}Repository
+{
+    Task<{{ primary_key.type }}> AddAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<{{ table_name }}>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    Task<{{ table_name }}?> GetByIdAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateAsync({{ table_name }} {{ camel_name }}, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteAsync({{ primary_key.type }} id, CancellationToken cancellationToken = default);
+}
