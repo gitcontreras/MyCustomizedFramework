@@ -1,4 +1,4 @@
-ousing System.Data;
+using System.Data;
 using System.Data.Common;
 using Dapper;
 using MyCustomizedFramework.Application.Abstractions.Persistence;
