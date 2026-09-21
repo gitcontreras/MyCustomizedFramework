@@ -10,9 +10,19 @@ public static class TablesMapper
     {
         var engineResult = ParseEngine(request.Engine);
 
-        return engineResult.IsFailure
-            ? Result.Failure<GetTablesQuery>(engineResult.Error)
-            : Result.Success(new GetTablesQuery(request.ConnectionString, engineResult.Value));
+        if (engineResult.IsFailure)
+        {
+            return Result.Failure<GetTablesQuery>(engineResult.Error);
+        }
+
+        var connection = new DatabaseConnectionDetails(
+            request.Server,
+            request.Port,
+            request.Database,
+            request.User,
+            request.Password);
+
+        return Result.Success(new GetTablesQuery(connection, engineResult.Value));
     }
 
     public static TableResponse ToResponse(TableDto dto) => new(dto.Schema, dto.Name);

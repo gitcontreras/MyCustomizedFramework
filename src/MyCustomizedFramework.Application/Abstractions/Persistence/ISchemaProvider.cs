@@ -3,11 +3,12 @@ using MyCustomizedFramework.Domain.SchemaExplorer;
 namespace MyCustomizedFramework.Application.Abstractions.Persistence;
 
 /// <summary>
-/// Reads table metadata from a specific database engine using a caller-supplied connection string.
+/// Reads table metadata from a specific database engine using caller-supplied connection details.
+/// Implementations own turning <see cref="DatabaseConnectionDetails"/> into a provider-specific connection string.
 /// </summary>
 public interface ISchemaProvider
 {
     Task<IReadOnlyCollection<DatabaseTable>> GetTablesAsync(
-        string connectionString,
+        DatabaseConnectionDetails connection,
         CancellationToken cancellationToken = default);
 }

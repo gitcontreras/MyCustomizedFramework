@@ -1,11 +1,26 @@
 using System.Data;
 using Npgsql;
+using MyCustomizedFramework.Domain.SchemaExplorer;
 
 namespace MyCustomizedFramework.Infrastructure.Persistence.SchemaProviders;
 
 internal sealed class PostgreSqlSchemaProvider : SchemaProviderBase
 {
-    protected override IDbConnection CreateConnection(string connectionString) => new NpgsqlConnection(connectionString);
+    private const int DefaultPort = 5432;
+
+    protected override IDbConnection CreateConnection(DatabaseConnectionDetails connection)
+    {
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = connection.Server,
+            Port = connection.Port ?? DefaultPort,
+            Database = connection.Database,
+            Username = connection.User,
+            Password = connection.Password
+        };
+
+        return new NpgsqlConnection(builder.ConnectionString);
+    }
 
     protected override string TablesQuery =>
         """

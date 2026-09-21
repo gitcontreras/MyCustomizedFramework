@@ -1,11 +1,24 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
+using MyCustomizedFramework.Domain.SchemaExplorer;
 
 namespace MyCustomizedFramework.Infrastructure.Persistence.SchemaProviders;
 
 internal sealed class SqlServerSchemaProvider : SchemaProviderBase
 {
-    protected override IDbConnection CreateConnection(string connectionString) => new SqlConnection(connectionString);
+    protected override IDbConnection CreateConnection(DatabaseConnectionDetails connection)
+    {
+        var builder = new SqlConnectionStringBuilder
+        {
+            DataSource = connection.Port.HasValue ? $"{connection.Server},{connection.Port}" : connection.Server,
+            InitialCatalog = connection.Database,
+            UserID = connection.User,
+            Password = connection.Password,
+            TrustServerCertificate = true
+        };
+
+        return new SqlConnection(builder.ConnectionString);
+    }
 
     protected override string TablesQuery =>
         """

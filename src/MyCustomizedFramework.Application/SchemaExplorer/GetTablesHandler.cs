@@ -10,17 +10,23 @@ public sealed class GetTablesHandler(ISchemaProviderFactory schemaProviderFactor
         GetTablesQuery query,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(query.ConnectionString))
+        if (string.IsNullOrWhiteSpace(query.Connection.Server))
         {
             return Result.Failure<IReadOnlyCollection<TableDto>>(
-                Error.Validation("Tables.ConnectionStringRequired", "The connection string is required."));
+                Error.Validation("Tables.ServerRequired", "The server is required."));
+        }
+
+        if (string.IsNullOrWhiteSpace(query.Connection.Database))
+        {
+            return Result.Failure<IReadOnlyCollection<TableDto>>(
+                Error.Validation("Tables.DatabaseRequired", "The database name is required."));
         }
 
         var provider = schemaProviderFactory.Resolve(query.Engine);
 
         try
         {
-            var tables = await provider.GetTablesAsync(query.ConnectionString, cancellationToken);
+            var tables = await provider.GetTablesAsync(query.Connection, cancellationToken);
 
             IReadOnlyCollection<TableDto> dtos = tables
                 .Select(table => new TableDto(table.Schema, table.Name))
