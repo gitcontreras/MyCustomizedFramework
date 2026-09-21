@@ -1,0 +1,6 @@
+@MyCustomizedFramework.Api_HostAddress = http://localhost:5027
+
+GET {{MyCustomizedFramework.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

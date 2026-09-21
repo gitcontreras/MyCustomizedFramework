@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# .NET build output
+[Bb]in/
+[Oo]bj/
+
+# Test results and coverage
+TestResults/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE and local tooling
+.claude/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
