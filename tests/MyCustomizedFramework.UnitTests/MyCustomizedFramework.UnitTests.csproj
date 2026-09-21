@@ -23,4 +23,8 @@
     <ProjectReference Include="..\..\src\MyCustomizedFramework.Application\MyCustomizedFramework.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Domain\" />
+  </ItemGroup>
+
 </Project>

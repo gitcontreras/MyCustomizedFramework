@@ -8,9 +8,6 @@ internal static class SwaggerExtensions
     {
         services.AddEndpointsApiExplorer();
 
-        // Evitar cargar extensiones o configuraciones que requieran una versión concreta
-        // de Swashbuckle si existe inconsistencia en tiempo de ejecución.
-        // Solo configuramos la inclusión de XML de forma segura.
         services.AddSwaggerGen(options =>
         {
             try
@@ -24,7 +21,7 @@ internal static class SwaggerExtensions
             }
             catch
             {
-                // no crítico si no se pueden cargar comentarios
+                // no critical, continue without XML comments if the file is not found or any error occurs
             }
         });
 
@@ -38,9 +35,9 @@ internal static class SwaggerExtensions
         app.UseSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCustomizedFramework API v1");
-            options.RoutePrefix = "swagger"; // acceso en /swagger
+            options.RoutePrefix = "swagger"; 
             options.DocumentTitle = "MyCustomizedFramework API Docs";
-            options.DefaultModelsExpandDepth(-1); // esconder modelos por defecto para limpieza
+            options.DefaultModelsExpandDepth(-1); 
             options.DisplayRequestDuration();
         });
 
