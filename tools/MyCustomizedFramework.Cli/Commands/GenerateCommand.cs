@@ -14,10 +14,18 @@ internal static class GenerateCommand
     {
         var options = ArgsParser.Parse(args);
 
-        var tableName = options.GetValueOrDefault("table");
-        if (string.IsNullOrWhiteSpace(tableName))
+        var tableOption = options.GetValueOrDefault("table");
+        var allTables = options.ContainsKey("all-tables");
+
+        if (allTables && !string.IsNullOrWhiteSpace(tableOption))
         {
-            Console.Error.WriteLine("Missing required --table <name>.");
+            Console.Error.WriteLine("Cannot combine --table with --all-tables.");
+            return 1;
+        }
+
+        if (!allTables && string.IsNullOrWhiteSpace(tableOption))
+        {
+            Console.Error.WriteLine("Provide --table <Name>[,<Name>...] or --all-tables.");
             return 1;
         }
 
@@ -44,47 +52,100 @@ internal static class GenerateCommand
         }
 
         var rootNamespace = options.GetValueOrDefault("root-namespace") ?? config.RootNamespace ?? "MyCustomizedFramework";
+        var repoRoot = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+        var force = options.ContainsKey("force");
 
         await using var provider = new ServiceCollection().AddInfrastructure().BuildServiceProvider();
-        var handler = provider.GetRequiredService<GenerateCrudHandler>();
 
         var connectionDetails = new DatabaseConnectionDetails(
             connection.Server, connection.Port, connection.Database, connection.User, connection.Password);
 
-        var result = await handler.HandleAsync(
-            new GenerateCrudQuery(connectionDetails, engineResult.Value, tableName, rootNamespace));
-
-        if (result.IsFailure)
+        string[] tableNames;
+        if (allTables)
         {
-            Console.Error.WriteLine($"Error: {result.Error.Code}: {result.Error.Message}");
-            return 1;
+            var tablesHandler = provider.GetRequiredService<GetTablesHandler>();
+            var tablesResult = await tablesHandler.HandleAsync(new GetTablesQuery(connectionDetails, engineResult.Value));
+            if (tablesResult.IsFailure)
+            {
+                Console.Error.WriteLine($"Error: {tablesResult.Error.Code}: {tablesResult.Error.Message}");
+                return 1;
+            }
+
+            tableNames = tablesResult.Value.Select(table => table.Name).ToArray();
+            if (tableNames.Length == 0)
+            {
+                Console.Error.WriteLine("No tables found for that connection.");
+                return 1;
+            }
+        }
+        else
+        {
+            tableNames = tableOption!
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToArray();
+
+            if (tableNames.Length == 0)
+            {
+                Console.Error.WriteLine("Provide at least one table name in --table.");
+                return 1;
+            }
         }
 
-        var repoRoot = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
-        var force = options.ContainsKey("force");
+        var generateHandler = provider.GetRequiredService<GenerateCrudHandler>();
 
-        WriteResult writeResult;
-        try
+        var totalWritten = 0;
+        var totalSkipped = 0;
+        var failedTables = new List<string>();
+
+        foreach (var tableName in tableNames)
         {
-            writeResult = GeneratedFileWriter.Write(result.Value, config.Paths, repoRoot, force);
-        }
-        catch (InvalidOperationException exception)
-        {
-            Console.Error.WriteLine($"Error: {exception.Message}");
-            return 1;
+            Console.WriteLine($"== {tableName} ==");
+
+            var result = await generateHandler.HandleAsync(
+                new GenerateCrudQuery(connectionDetails, engineResult.Value, tableName, rootNamespace));
+
+            if (result.IsFailure)
+            {
+                Console.Error.WriteLine($"  skipped table (error): {result.Error.Code}: {result.Error.Message}");
+                failedTables.Add(tableName);
+                continue;
+            }
+
+            WriteResult writeResult;
+            try
+            {
+                writeResult = GeneratedFileWriter.Write(result.Value, config.Paths, repoRoot, force);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Console.Error.WriteLine($"  Error: {exception.Message}");
+                failedTables.Add(tableName);
+                continue;
+            }
+
+            foreach (var path in writeResult.Written)
+            {
+                Console.WriteLine($"  written: {path}");
+            }
+
+            foreach (var path in writeResult.Skipped)
+            {
+                Console.WriteLine($"  skipped (already exists, use --force to overwrite): {path}");
+            }
+
+            totalWritten += writeResult.Written.Count;
+            totalSkipped += writeResult.Skipped.Count;
         }
 
-        foreach (var path in writeResult.Written)
+        var succeeded = tableNames.Length - failedTables.Count;
+        Console.WriteLine();
+        Console.WriteLine($"{succeeded}/{tableNames.Length} tables generated, {totalWritten} files written, {totalSkipped} files skipped.");
+
+        if (failedTables.Count > 0)
         {
-            Console.WriteLine($"written: {path}");
+            Console.WriteLine($"Tables with errors: {string.Join(", ", failedTables)}");
         }
 
-        foreach (var path in writeResult.Skipped)
-        {
-            Console.WriteLine($"skipped (already exists, use --force to overwrite): {path}");
-        }
-
-        Console.WriteLine($"{writeResult.Written.Count} written, {writeResult.Skipped.Count} skipped.");
-        return 0;
+        return succeeded == 0 ? 1 : 0;
     }
 }
