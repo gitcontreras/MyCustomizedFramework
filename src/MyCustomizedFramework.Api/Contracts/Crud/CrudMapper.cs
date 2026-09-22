@@ -1,5 +1,5 @@
-using MyCustomizedFramework.Api.Contracts.Shared;
 using MyCustomizedFramework.Application.CrudGeneration;
+using MyCustomizedFramework.Application.SchemaExplorer;
 using MyCustomizedFramework.Domain.Common;
 using MyCustomizedFramework.Domain.SchemaExplorer;
 

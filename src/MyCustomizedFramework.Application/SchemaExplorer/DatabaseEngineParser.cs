@@ -1,11 +1,11 @@
 using MyCustomizedFramework.Domain.Common;
 using MyCustomizedFramework.Domain.SchemaExplorer;
 
-namespace MyCustomizedFramework.Api.Contracts.Shared;
+namespace MyCustomizedFramework.Application.SchemaExplorer;
 
 /// <summary>
-/// Shared between every endpoint that accepts a free-form engine string ("sql", "postgres", ...) so the
-/// alias list lives in exactly one place.
+/// Shared between every caller that accepts a free-form engine string ("sql", "postgres", ...) - the Api's
+/// request mappers and the crudgen CLI - so the alias list lives in exactly one place.
 /// </summary>
 public static class DatabaseEngineParser
 {
