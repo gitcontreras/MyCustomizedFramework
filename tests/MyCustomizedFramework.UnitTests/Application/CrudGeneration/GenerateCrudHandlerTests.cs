@@ -94,16 +94,71 @@ public sealed class GenerateCrudHandlerTests
         Assert.Equal("sales", generator.LastSchema);
     }
 
+    [Fact]
+    public async Task HandleAsyncAutoDetectsTheSchemaWhenTheTableExistsInExactlyOneSchema()
+    {
+        IReadOnlyCollection<DatabaseTable> tables = [DatabaseTable.Create("sales", "Orders")];
+        var generator = new StubCrudFileGenerator([]);
+        var handler = new GenerateCrudHandler(
+            new StubSchemaProviderFactory(new StubSchemaProvider(SingleKeyColumns, tables)),
+            generator);
+
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, null, "Orders", "MyCustomizedFramework"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("sales", generator.LastSchema);
+    }
+
+    [Fact]
+    public async Task HandleAsyncReturnsValidationErrorWhenTheTableExistsInMultipleSchemas()
+    {
+        IReadOnlyCollection<DatabaseTable> tables =
+        [
+            DatabaseTable.Create("sales", "Orders"),
+            DatabaseTable.Create("archive", "Orders")
+        ];
+        var handler = new GenerateCrudHandler(
+            new StubSchemaProviderFactory(new StubSchemaProvider(SingleKeyColumns, tables)),
+            new StubCrudFileGenerator([]));
+
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, null, "Orders", "MyCustomizedFramework"));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+        Assert.Equal("Crud.AmbiguousSchema", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task HandleAsyncSkipsAutoDetectionWhenSchemaIsAlreadyGiven()
+    {
+        // Only one schema is "registered" here (sales) - if the handler tried to auto-detect despite
+        // Schema being given explicitly, it would still resolve fine, so this alone wouldn't catch a
+        // regression. The real assertion is that the explicitly-given "archive" (which GetTablesAsync
+        // never even returns) still wins, proving GetTablesAsync was never consulted.
+        IReadOnlyCollection<DatabaseTable> tables = [DatabaseTable.Create("sales", "Orders")];
+        var generator = new StubCrudFileGenerator([]);
+        var handler = new GenerateCrudHandler(
+            new StubSchemaProviderFactory(new StubSchemaProvider(SingleKeyColumns, tables)),
+            generator);
+
+        var result = await handler.HandleAsync(new GenerateCrudQuery(ValidConnection, DatabaseEngine.SqlServer, "archive", "Orders", "MyCustomizedFramework"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("archive", generator.LastSchema);
+    }
+
     private sealed class StubSchemaProviderFactory(ISchemaProvider provider) : ISchemaProviderFactory
     {
         public ISchemaProvider Resolve(DatabaseEngine engine) => provider;
     }
 
-    private sealed class StubSchemaProvider(IReadOnlyCollection<TableColumn> columns) : ISchemaProvider
+    private sealed class StubSchemaProvider(
+        IReadOnlyCollection<TableColumn> columns,
+        IReadOnlyCollection<DatabaseTable>? tables = null) : ISchemaProvider
     {
         public Task<IReadOnlyCollection<DatabaseTable>> GetTablesAsync(
             DatabaseConnectionDetails connection,
-            CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyCollection<DatabaseTable>>([]);
+            CancellationToken cancellationToken = default) => Task.FromResult(tables ?? []);
 
         public Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
             DatabaseConnectionDetails connection,
