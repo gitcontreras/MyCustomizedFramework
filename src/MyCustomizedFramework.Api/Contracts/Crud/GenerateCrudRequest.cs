@@ -14,4 +14,5 @@ public sealed record GenerateCrudRequest(
     string User,
     string Password,
     string TableName,
-    string? RootNamespace = null);
+    string? RootNamespace = null,
+    string? Schema = null);

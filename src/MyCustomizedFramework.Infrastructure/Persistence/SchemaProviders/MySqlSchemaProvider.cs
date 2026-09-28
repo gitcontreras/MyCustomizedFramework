@@ -38,7 +38,7 @@ internal sealed class MySqlSchemaProvider : SchemaProviderBase
                CASE WHEN is_nullable = 'YES' THEN 1 ELSE 0 END AS IsNullable,
                ordinal_position AS OrdinalPosition
         FROM information_schema.columns
-        WHERE table_schema = DATABASE() AND table_name = @TableName
+        WHERE table_schema = COALESCE(@Schema, DATABASE()) AND table_name = @TableName
         ORDER BY ordinal_position
         """;
 
@@ -46,7 +46,7 @@ internal sealed class MySqlSchemaProvider : SchemaProviderBase
         """
         SELECT column_name
         FROM information_schema.key_column_usage
-        WHERE table_schema = DATABASE() AND table_name = @TableName AND constraint_name = 'PRIMARY'
+        WHERE table_schema = COALESCE(@Schema, DATABASE()) AND table_name = @TableName AND constraint_name = 'PRIMARY'
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

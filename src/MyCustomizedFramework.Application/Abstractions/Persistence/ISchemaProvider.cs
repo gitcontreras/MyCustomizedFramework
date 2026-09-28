@@ -12,8 +12,13 @@ public interface ISchemaProvider
         DatabaseConnectionDetails connection,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// <paramref name="schema"/> is optional - when null, no schema filter is applied and the
+    /// connection's own default schema resolution decides which table is read.
+    /// </summary>
     Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
         DatabaseConnectionDetails connection,
+        string? schema,
         string tableName,
         CancellationToken cancellationToken = default);
 }

@@ -23,7 +23,7 @@ static int PrintUsage()
         """
         Usage:
           crudgen tables      --engine <sql|postgres|mysql|oracle> --server <host> [--port N] --database <name> [--user <user>] [--password <pwd>] [--config <path>]
-          crudgen generate    --table <Name>[,<Name>...] [--force] [--root-namespace <Namespace>] [connection flags as above]
+          crudgen generate    --table <[Schema.]Name>[,<[Schema.]Name>...] [--force] [--root-namespace <Namespace>] [connection flags as above]
           crudgen generate    --all-tables [--force] [--root-namespace <Namespace>] [connection flags as above]
           crudgen init        [--config <path>] [--force]
           crudgen init-kernel [--config <path>] [--force] [--engine ...] [--root-namespace ...]

@@ -36,6 +36,7 @@ internal sealed class SqlServerSchemaProvider : SchemaProviderBase
                ORDINAL_POSITION AS OrdinalPosition
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_NAME = @TableName
+          AND (@Schema IS NULL OR TABLE_SCHEMA = @Schema)
         ORDER BY ORDINAL_POSITION
         """;
 
@@ -44,8 +45,12 @@ internal sealed class SqlServerSchemaProvider : SchemaProviderBase
         SELECT ku.COLUMN_NAME
         FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
         JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku
-            ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME AND tc.TABLE_NAME = ku.TABLE_NAME
-        WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY' AND tc.TABLE_NAME = @TableName
+            ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
+            AND tc.TABLE_NAME = ku.TABLE_NAME
+            AND tc.TABLE_SCHEMA = ku.TABLE_SCHEMA
+        WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+          AND tc.TABLE_NAME = @TableName
+          AND (@Schema IS NULL OR tc.TABLE_SCHEMA = @Schema)
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

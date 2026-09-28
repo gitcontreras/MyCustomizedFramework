@@ -31,6 +31,7 @@ internal abstract class SchemaProviderBase : ISchemaProvider
 
     public async Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
         DatabaseConnectionDetails connection,
+        string? schema,
         string tableName,
         CancellationToken cancellationToken = default)
     {
@@ -38,13 +39,13 @@ internal abstract class SchemaProviderBase : ISchemaProvider
 
         var columnsCommand = new CommandDefinition(
             ColumnsQuery,
-            new { TableName = tableName },
+            new { Schema = schema, TableName = tableName },
             cancellationToken: cancellationToken);
         var columnRows = await dbConnection.QueryAsync<ColumnRow>(columnsCommand);
 
         var primaryKeyCommand = new CommandDefinition(
             PrimaryKeyColumnsQuery,
-            new { TableName = tableName },
+            new { Schema = schema, TableName = tableName },
             cancellationToken: cancellationToken);
         var primaryKeyNames = (await dbConnection.QueryAsync<string>(primaryKeyCommand))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);

@@ -25,7 +25,7 @@ internal static class GenerateCommand
 
         if (!allTables && string.IsNullOrWhiteSpace(tableOption))
         {
-            Console.Error.WriteLine("Provide --table <Name>[,<Name>...] or --all-tables.");
+            Console.Error.WriteLine("Provide --table <[Schema.]Name>[,<[Schema.]Name>...] or --all-tables.");
             return 1;
         }
 
@@ -60,7 +60,7 @@ internal static class GenerateCommand
         var connectionDetails = new DatabaseConnectionDetails(
             connection.Server, connection.Port, connection.Database, connection.User, connection.Password);
 
-        string[] tableNames;
+        TableIdentifier[] tables;
         if (allTables)
         {
             var tablesHandler = provider.GetRequiredService<GetTablesHandler>();
@@ -71,8 +71,8 @@ internal static class GenerateCommand
                 return 1;
             }
 
-            tableNames = tablesResult.Value.Select(table => table.Name).ToArray();
-            if (tableNames.Length == 0)
+            tables = tablesResult.Value.Select(table => new TableIdentifier(table.Schema, table.Name)).ToArray();
+            if (tables.Length == 0)
             {
                 Console.Error.WriteLine("No tables found for that connection.");
                 return 1;
@@ -80,11 +80,12 @@ internal static class GenerateCommand
         }
         else
         {
-            tableNames = tableOption!
+            tables = tableOption!
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(TableIdentifier.Parse)
                 .ToArray();
 
-            if (tableNames.Length == 0)
+            if (tables.Length == 0)
             {
                 Console.Error.WriteLine("Provide at least one table name in --table.");
                 return 1;
@@ -97,17 +98,18 @@ internal static class GenerateCommand
         var totalSkipped = 0;
         var failedTables = new List<string>();
 
-        foreach (var tableName in tableNames)
+        foreach (var table in tables)
         {
-            Console.WriteLine($"== {tableName} ==");
+            var label = table.Schema is null ? table.Name : $"{table.Schema}.{table.Name}";
+            Console.WriteLine($"== {label} ==");
 
             var result = await generateHandler.HandleAsync(
-                new GenerateCrudQuery(connectionDetails, engineResult.Value, tableName, rootNamespace));
+                new GenerateCrudQuery(connectionDetails, engineResult.Value, table.Schema, table.Name, rootNamespace));
 
             if (result.IsFailure)
             {
                 Console.Error.WriteLine($"  skipped table (error): {result.Error.Code}: {result.Error.Message}");
-                failedTables.Add(tableName);
+                failedTables.Add(label);
                 continue;
             }
 
@@ -119,7 +121,7 @@ internal static class GenerateCommand
             catch (InvalidOperationException exception)
             {
                 Console.Error.WriteLine($"  Error: {exception.Message}");
-                failedTables.Add(tableName);
+                failedTables.Add(label);
                 continue;
             }
 
@@ -137,9 +139,9 @@ internal static class GenerateCommand
             totalSkipped += writeResult.Skipped.Count;
         }
 
-        var succeeded = tableNames.Length - failedTables.Count;
+        var succeeded = tables.Length - failedTables.Count;
         Console.WriteLine();
-        Console.WriteLine($"{succeeded}/{tableNames.Length} tables generated, {totalWritten} files written, {totalSkipped} files skipped.");
+        Console.WriteLine($"{succeeded}/{tables.Length} tables generated, {totalWritten} files written, {totalSkipped} files skipped.");
 
         if (failedTables.Count > 0)
         {

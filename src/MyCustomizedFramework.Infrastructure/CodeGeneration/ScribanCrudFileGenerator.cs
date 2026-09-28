@@ -14,6 +14,7 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
 
     public IReadOnlyCollection<GeneratedFile> Generate(
         DatabaseEngine engine,
+        string? schema,
         string tableName,
         IReadOnlyCollection<TableColumn> columns,
         string rootNamespace)
@@ -21,10 +22,10 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
         var primaryKey = columns.Single(column => column.IsPrimaryKey);
         var insertableColumns = columns.Where(column => !column.IsPrimaryKey).ToArray();
 
-        // The SQL text must reference the real table name (often plural, e.g. "Orders"), regardless of
-        // what its C# entity/class should be called - that dialect call intentionally uses the raw
-        // tableName, never the singularized entityName below.
-        var fragments = SqlDialect.Build(engine, tableName, primaryKey, insertableColumns);
+        // The SQL text must reference the real table name (often plural, e.g. "Orders") and its real
+        // schema when given, regardless of what its C# entity/class should be called - that dialect call
+        // intentionally uses the raw tableName, never the singularized entityName below.
+        var fragments = SqlDialect.Build(engine, schema, tableName, primaryKey, insertableColumns);
 
         // A domain entity is one row, so its C# type name must be singular ("Order") even when the table
         // itself is named in the plural ("Orders") - the common real-world convention. Singularize() is

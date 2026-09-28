@@ -27,23 +27,30 @@ internal sealed class OracleSchemaProvider : SchemaProviderBase
         ORDER BY TABLE_NAME
         """;
 
+    // ALL_* (not USER_*) so an explicit :Schema can target a table owned by a different user; when no
+    // schema is given, NVL falls back to the connecting user's own schema - the previous USER_* behavior.
     protected override string ColumnsQuery =>
         """
         SELECT COLUMN_NAME AS "Name",
                DATA_TYPE AS "DataType",
                CASE WHEN NULLABLE = 'Y' THEN 1 ELSE 0 END AS "IsNullable",
                COLUMN_ID AS "OrdinalPosition"
-        FROM USER_TAB_COLUMNS
+        FROM ALL_TAB_COLUMNS
         WHERE TABLE_NAME = :TableName
+          AND OWNER = NVL(:Schema, USER)
         ORDER BY COLUMN_ID
         """;
 
     protected override string PrimaryKeyColumnsQuery =>
         """
         SELECT cols.COLUMN_NAME
-        FROM USER_CONSTRAINTS cons
-        JOIN USER_CONS_COLUMNS cols ON cons.CONSTRAINT_NAME = cols.CONSTRAINT_NAME
-        WHERE cons.CONSTRAINT_TYPE = 'P' AND cons.TABLE_NAME = :TableName
+        FROM ALL_CONSTRAINTS cons
+        JOIN ALL_CONS_COLUMNS cols
+            ON cons.CONSTRAINT_NAME = cols.CONSTRAINT_NAME
+            AND cons.OWNER = cols.OWNER
+        WHERE cons.CONSTRAINT_TYPE = 'P'
+          AND cons.TABLE_NAME = :TableName
+          AND cons.OWNER = NVL(:Schema, USER)
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

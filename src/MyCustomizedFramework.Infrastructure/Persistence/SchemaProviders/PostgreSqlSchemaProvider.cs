@@ -39,6 +39,7 @@ internal sealed class PostgreSqlSchemaProvider : SchemaProviderBase
                ordinal_position AS "OrdinalPosition"
         FROM information_schema.columns
         WHERE table_name = @TableName
+          AND (@Schema::text IS NULL OR table_schema = @Schema)
         ORDER BY ordinal_position
         """;
 
@@ -47,8 +48,12 @@ internal sealed class PostgreSqlSchemaProvider : SchemaProviderBase
         SELECT ku.column_name AS "ColumnName"
         FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage ku
-            ON tc.constraint_name = ku.constraint_name AND tc.table_name = ku.table_name
-        WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_name = @TableName
+            ON tc.constraint_name = ku.constraint_name
+            AND tc.table_name = ku.table_name
+            AND tc.table_schema = ku.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_name = @TableName
+          AND (@Schema::text IS NULL OR tc.table_schema = @Schema)
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

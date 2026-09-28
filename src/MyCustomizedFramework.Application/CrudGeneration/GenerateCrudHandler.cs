@@ -33,7 +33,7 @@ public sealed class GenerateCrudHandler(ISchemaProviderFactory schemaProviderFac
 
         try
         {
-            var columns = await provider.GetColumnsAsync(query.Connection, query.TableName, cancellationToken);
+            var columns = await provider.GetColumnsAsync(query.Connection, query.Schema, query.TableName, cancellationToken);
 
             if (columns.Count == 0)
             {
@@ -50,7 +50,7 @@ public sealed class GenerateCrudHandler(ISchemaProviderFactory schemaProviderFac
                         $"Table '{query.TableName}' must have exactly one primary key column; composite keys are not supported yet."));
             }
 
-            var files = crudFileGenerator.Generate(query.Engine, query.TableName, columns, query.RootNamespace);
+            var files = crudFileGenerator.Generate(query.Engine, query.Schema, query.TableName, columns, query.RootNamespace);
 
             return Result.Success(files);
         }

@@ -72,6 +72,7 @@ public sealed class GetTablesHandlerTests
 
         public Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
             DatabaseConnectionDetails connection,
+            string? schema,
             string tableName,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyCollection<TableColumn>>([]);
@@ -85,6 +86,7 @@ public sealed class GetTablesHandlerTests
 
         public Task<IReadOnlyCollection<TableColumn>> GetColumnsAsync(
             DatabaseConnectionDetails connection,
+            string? schema,
             string tableName,
             CancellationToken cancellationToken = default) => throw new FakeDbException("Connection refused.");
     }

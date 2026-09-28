@@ -27,6 +27,6 @@ public static class CrudMapper
             ? "MyCustomizedFramework"
             : request.RootNamespace.Trim();
 
-        return Result.Success(new GenerateCrudQuery(connection, engineResult.Value, request.TableName, rootNamespace));
+        return Result.Success(new GenerateCrudQuery(connection, engineResult.Value, request.Schema, request.TableName, rootNamespace));
     }
 }

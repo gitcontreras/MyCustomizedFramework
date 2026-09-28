@@ -9,6 +9,7 @@ public interface ICrudFileGenerator
 {
     IReadOnlyCollection<GeneratedFile> Generate(
         DatabaseEngine engine,
+        string? schema,
         string tableName,
         IReadOnlyCollection<TableColumn> columns,
         string rootNamespace);
