@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using {{ root_namespace }}.Api.Common;
 using {{ root_namespace }}.Application.{{ plural_name }};
 
-namespace {{ root_namespace }}.Api.Controllers;
+namespace {{ root_namespace }}.Api.Controllers.{{ plural_name }};
 
 [ApiController]
 [Route("api/{{ route_segment }}")]

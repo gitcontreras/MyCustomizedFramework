@@ -1,6 +1,6 @@
 using {{ root_namespace }}.Domain.{{ plural_name }};
 
-namespace {{ root_namespace }}.Application.Abstractions.Persistence;
+namespace {{ root_namespace }}.Application.{{ plural_name }};
 
 public interface I{{ table_name }}Repository
 {

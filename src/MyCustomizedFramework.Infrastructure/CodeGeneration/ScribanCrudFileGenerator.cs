@@ -41,18 +41,20 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
             DeleteSql = fragments.Delete
         };
 
+        var plural = model.PluralName;
+
         return
         [
-            new GeneratedFile($"Domain/{tableName}.cs", Render("DomainEntity", model)),
-            new GeneratedFile($"Infrastructure/{tableName}DbEntity.cs", Render("DbEntity", model)),
-            new GeneratedFile($"Application/{tableName}Request.cs", Render("Request", model)),
-            new GeneratedFile($"Application/{tableName}Result.cs", Render("Result", model)),
-            new GeneratedFile($"Application/I{tableName}Repository.cs", Render("IRepository", model)),
-            new GeneratedFile($"Infrastructure/{tableName}Repository.cs", Render("Repository", model)),
-            new GeneratedFile($"Application/I{tableName}Service.cs", Render("IService", model)),
-            new GeneratedFile($"Application/{tableName}Service.cs", Render("Service", model)),
-            new GeneratedFile($"Tests/{tableName}ServiceTests.cs", Render("ServiceTests", model)),
-            new GeneratedFile($"Api/{tableName}Controller.cs", Render("Controller", model))
+            new GeneratedFile($"Domain/{plural}/{tableName}.cs", Render("DomainEntity", model)),
+            new GeneratedFile($"Infrastructure/Persistence/{plural}/{tableName}DbEntity.cs", Render("DbEntity", model)),
+            new GeneratedFile($"Application/{plural}/{tableName}Request.cs", Render("Request", model)),
+            new GeneratedFile($"Application/{plural}/{tableName}Result.cs", Render("Result", model)),
+            new GeneratedFile($"Application/{plural}/I{tableName}Repository.cs", Render("IRepository", model)),
+            new GeneratedFile($"Infrastructure/Persistence/{plural}/{tableName}Repository.cs", Render("Repository", model)),
+            new GeneratedFile($"Application/{plural}/I{tableName}Service.cs", Render("IService", model)),
+            new GeneratedFile($"Application/{plural}/{tableName}Service.cs", Render("Service", model)),
+            new GeneratedFile($"Tests/Application/{plural}/{tableName}ServiceTests.cs", Render("ServiceTests", model)),
+            new GeneratedFile($"Api/Controllers/{plural}/{tableName}Controller.cs", Render("Controller", model))
         ];
     }
 

@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using {{ root_namespace }}.Application.Abstractions.Persistence;
+using {{ root_namespace }}.Application.{{ plural_name }};
 using {{ root_namespace }}.Domain.{{ plural_name }};
 
 namespace {{ root_namespace }}.Infrastructure.Persistence.{{ plural_name }};

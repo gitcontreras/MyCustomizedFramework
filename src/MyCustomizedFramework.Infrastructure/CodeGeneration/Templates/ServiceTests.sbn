@@ -1,4 +1,3 @@
-using {{ root_namespace }}.Application.Abstractions.Persistence;
 using {{ root_namespace }}.Application.{{ plural_name }};
 using {{ root_namespace }}.Domain.Common;
 using {{ root_namespace }}.Domain.{{ plural_name }};

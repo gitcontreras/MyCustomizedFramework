@@ -14,23 +14,23 @@ public sealed class ScribanCrudFileGeneratorTests
     ];
 
     [Fact]
-    public void GenerateProducesTheTenExpectedFilesForSqlServer()
+    public void GenerateProducesTheTenExpectedFilesUnderFeatureFolders()
     {
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
 
         Assert.Equal(10, files.Count);
-        Assert.Contains(files, file => file.RelativePath == "Domain/Student.cs");
-        Assert.Contains(files, file => file.RelativePath == "Infrastructure/StudentDbEntity.cs");
-        Assert.Contains(files, file => file.RelativePath == "Application/StudentRequest.cs");
-        Assert.Contains(files, file => file.RelativePath == "Application/StudentResult.cs");
-        Assert.Contains(files, file => file.RelativePath == "Application/IStudentRepository.cs");
-        Assert.Contains(files, file => file.RelativePath == "Infrastructure/StudentRepository.cs");
-        Assert.Contains(files, file => file.RelativePath == "Application/IStudentService.cs");
-        Assert.Contains(files, file => file.RelativePath == "Application/StudentService.cs");
-        Assert.Contains(files, file => file.RelativePath == "Tests/StudentServiceTests.cs");
-        Assert.Contains(files, file => file.RelativePath == "Api/StudentController.cs");
+        Assert.Contains(files, file => file.RelativePath == "Domain/Students/Student.cs");
+        Assert.Contains(files, file => file.RelativePath == "Infrastructure/Persistence/Students/StudentDbEntity.cs");
+        Assert.Contains(files, file => file.RelativePath == "Application/Students/StudentRequest.cs");
+        Assert.Contains(files, file => file.RelativePath == "Application/Students/StudentResult.cs");
+        Assert.Contains(files, file => file.RelativePath == "Application/Students/IStudentRepository.cs");
+        Assert.Contains(files, file => file.RelativePath == "Infrastructure/Persistence/Students/StudentRepository.cs");
+        Assert.Contains(files, file => file.RelativePath == "Application/Students/IStudentService.cs");
+        Assert.Contains(files, file => file.RelativePath == "Application/Students/StudentService.cs");
+        Assert.Contains(files, file => file.RelativePath == "Tests/Application/Students/StudentServiceTests.cs");
+        Assert.Contains(files, file => file.RelativePath == "Api/Controllers/Students/StudentController.cs");
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var entity = files.Single(file => file.RelativePath == "Domain/Student.cs").Content;
+        var entity = files.Single(file => file.RelativePath == "Domain/Students/Student.cs").Content;
 
         Assert.Contains("public sealed class Student", entity);
         Assert.Contains("public int Id { get; private set; }", entity);
@@ -54,8 +54,8 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var request = files.Single(file => file.RelativePath == "Application/StudentRequest.cs").Content;
-        var result = files.Single(file => file.RelativePath == "Application/StudentResult.cs").Content;
+        var request = files.Single(file => file.RelativePath == "Application/Students/StudentRequest.cs").Content;
+        var result = files.Single(file => file.RelativePath == "Application/Students/StudentResult.cs").Content;
 
         Assert.Contains("public sealed record StudentRequest(", request);
         Assert.DoesNotContain("int Id", request);
@@ -69,7 +69,7 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var repository = files.Single(file => file.RelativePath == "Infrastructure/StudentRepository.cs").Content;
+        var repository = files.Single(file => file.RelativePath == "Infrastructure/Persistence/Students/StudentRepository.cs").Content;
 
         Assert.Contains("QuerySingleAsync<int>(command)", repository);
         Assert.Contains("OUTPUT INSERTED.[Id]", repository);
@@ -82,7 +82,7 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.Oracle, "Student", StudentColumns, "MyCustomizedFramework");
-        var repository = files.Single(file => file.RelativePath == "Infrastructure/StudentRepository.cs").Content;
+        var repository = files.Single(file => file.RelativePath == "Infrastructure/Persistence/Students/StudentRepository.cs").Content;
 
         Assert.Contains("ParameterDirection.Output", repository);
         Assert.Contains("RETURNING \"Id\" INTO :Id", repository);
@@ -94,8 +94,8 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "Acme.Payroll");
-        var entity = files.Single(file => file.RelativePath == "Domain/Student.cs").Content;
-        var service = files.Single(file => file.RelativePath == "Application/StudentService.cs").Content;
+        var entity = files.Single(file => file.RelativePath == "Domain/Students/Student.cs").Content;
+        var service = files.Single(file => file.RelativePath == "Application/Students/StudentService.cs").Content;
 
         Assert.Contains("namespace Acme.Payroll.Domain.Students;", entity);
         Assert.Contains("using Acme.Payroll.Domain.Common;", service);
@@ -109,7 +109,7 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var tests = files.Single(file => file.RelativePath == "Tests/StudentServiceTests.cs").Content;
+        var tests = files.Single(file => file.RelativePath == "Tests/Application/Students/StudentServiceTests.cs").Content;
 
         Assert.Contains("public sealed class StudentServiceTests", tests);
         Assert.Contains("private sealed class StubRepository : IStudentRepository", tests);
@@ -125,8 +125,9 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var controller = files.Single(file => file.RelativePath == "Api/StudentController.cs").Content;
+        var controller = files.Single(file => file.RelativePath == "Api/Controllers/Students/StudentController.cs").Content;
 
+        Assert.Contains("namespace MyCustomizedFramework.Api.Controllers.Students;", controller);
         Assert.Contains("[Route(\"api/students\")]", controller);
         Assert.Contains("public sealed class StudentController(IStudentService service) : ControllerBase", controller);
         Assert.Contains("[HttpGet]", controller);
@@ -143,10 +144,21 @@ public sealed class ScribanCrudFileGeneratorTests
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
-        var service = files.Single(file => file.RelativePath == "Application/StudentService.cs").Content;
+        var service = files.Single(file => file.RelativePath == "Application/Students/StudentService.cs").Content;
 
         Assert.Contains("public sealed class StudentService(IStudentRepository repository) : IStudentService", service);
         Assert.Contains("Task<Result<StudentResult>> GetStudentByIdAsync(int id", service);
         Assert.Contains("Task<Result> DeleteStudentByIdAsync(int id", service);
+    }
+
+    [Fact]
+    public void GenerateRepositoryAndServiceInterfacesShareTheSameFeatureNamespace()
+    {
+        var generator = new ScribanCrudFileGenerator();
+
+        var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
+        var repositoryInterface = files.Single(file => file.RelativePath == "Application/Students/IStudentRepository.cs").Content;
+
+        Assert.Contains("namespace MyCustomizedFramework.Application.Students;", repositoryInterface);
     }
 }
