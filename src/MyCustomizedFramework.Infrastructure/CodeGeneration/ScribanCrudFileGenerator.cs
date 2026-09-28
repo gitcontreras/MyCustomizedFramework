@@ -28,6 +28,7 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
             TableName = tableName,
             PluralName = tableName.Pluralize(),
             CamelName = tableName.Camelize(),
+            RouteSegment = tableName.Pluralize().ToLowerInvariant(),
             Engine = engine.ToString(),
             Columns = columns.Select(ToColumnModel).ToArray(),
             InsertableColumns = insertableColumns.Select(ToColumnModel).ToArray(),
@@ -50,7 +51,8 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
             new GeneratedFile($"Infrastructure/{tableName}Repository.cs", Render("Repository", model)),
             new GeneratedFile($"Application/I{tableName}Service.cs", Render("IService", model)),
             new GeneratedFile($"Application/{tableName}Service.cs", Render("Service", model)),
-            new GeneratedFile($"Tests/{tableName}ServiceTests.cs", Render("ServiceTests", model))
+            new GeneratedFile($"Tests/{tableName}ServiceTests.cs", Render("ServiceTests", model)),
+            new GeneratedFile($"Api/{tableName}Controller.cs", Render("Controller", model))
         ];
     }
 
@@ -103,7 +105,7 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
         string[] names =
         [
             "DomainEntity", "DbEntity", "Request", "Result", "IRepository", "Repository", "IService", "Service",
-            "ServiceTests"
+            "ServiceTests", "Controller"
         ];
 
         return names.ToDictionary(

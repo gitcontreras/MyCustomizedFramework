@@ -53,6 +53,6 @@ public sealed class CrudGenConfigTests
 
         Assert.NotNull(config);
         Assert.False(string.IsNullOrWhiteSpace(config!.RootNamespace));
-        Assert.Equal(4, config.Paths.Count);
+        Assert.Equal(5, config.Paths.Count);
     }
 }

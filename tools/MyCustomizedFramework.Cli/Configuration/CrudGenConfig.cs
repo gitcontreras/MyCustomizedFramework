@@ -38,6 +38,7 @@ internal sealed class CrudGenConfig
             "Domain": "src/YourCompany.YourProject.Domain",
             "Application": "src/YourCompany.YourProject.Application",
             "Infrastructure": "src/YourCompany.YourProject.Infrastructure",
+            "Api": "src/YourCompany.YourProject.Api",
             "Tests": "tests/YourCompany.YourProject.UnitTests"
           }
         }

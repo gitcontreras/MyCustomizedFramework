@@ -16,6 +16,9 @@ internal sealed class CrudTemplateModel
 
     public required string CamelName { get; init; }
 
+    /// <summary>Lowercase plural, used as the generated controller's route segment (e.g. "students").</summary>
+    public required string RouteSegment { get; init; }
+
     /// <summary>The domain enum member name (e.g. "SqlServer", "Oracle") used only to branch the
     /// insert-and-return-id logic, which is the one place the generated Repository truly differs per engine.</summary>
     public required string Engine { get; init; }

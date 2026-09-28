@@ -14,13 +14,13 @@ public sealed class ScribanCrudFileGeneratorTests
     ];
 
     [Fact]
-    public void GenerateProducesTheNineExpectedFilesForSqlServer()
+    public void GenerateProducesTheTenExpectedFilesForSqlServer()
     {
         var generator = new ScribanCrudFileGenerator();
 
         var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
 
-        Assert.Equal(9, files.Count);
+        Assert.Equal(10, files.Count);
         Assert.Contains(files, file => file.RelativePath == "Domain/Student.cs");
         Assert.Contains(files, file => file.RelativePath == "Infrastructure/StudentDbEntity.cs");
         Assert.Contains(files, file => file.RelativePath == "Application/StudentRequest.cs");
@@ -30,6 +30,7 @@ public sealed class ScribanCrudFileGeneratorTests
         Assert.Contains(files, file => file.RelativePath == "Application/IStudentService.cs");
         Assert.Contains(files, file => file.RelativePath == "Application/StudentService.cs");
         Assert.Contains(files, file => file.RelativePath == "Tests/StudentServiceTests.cs");
+        Assert.Contains(files, file => file.RelativePath == "Api/StudentController.cs");
     }
 
     [Fact]
@@ -116,6 +117,24 @@ public sealed class ScribanCrudFileGeneratorTests
         Assert.Contains("Task GetStudentByIdAsync_ReturnsNotFound_WhenRepositoryReturnsNull()", tests);
         Assert.Contains("Task UpdateStudentByIdAsync_ReturnsSuccess_WhenFound()", tests);
         Assert.Contains("Task DeleteStudentByIdAsync_ReturnsSuccess_WhenDeleted()", tests);
+    }
+
+    [Fact]
+    public void GenerateControllerExposesTheFiveRestEndpointsOverTheGeneratedService()
+    {
+        var generator = new ScribanCrudFileGenerator();
+
+        var files = generator.Generate(DatabaseEngine.SqlServer, "Student", StudentColumns, "MyCustomizedFramework");
+        var controller = files.Single(file => file.RelativePath == "Api/StudentController.cs").Content;
+
+        Assert.Contains("[Route(\"api/students\")]", controller);
+        Assert.Contains("public sealed class StudentController(IStudentService service) : ControllerBase", controller);
+        Assert.Contains("[HttpGet]", controller);
+        Assert.Contains("[HttpGet(\"{id}\")]", controller);
+        Assert.Contains("[HttpPost]", controller);
+        Assert.Contains("[HttpPut(\"{id}\")]", controller);
+        Assert.Contains("[HttpDelete(\"{id}\")]", controller);
+        Assert.Contains("result.ToActionResult(value => value);", controller);
     }
 
     [Fact]
