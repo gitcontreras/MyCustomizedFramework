@@ -20,15 +20,24 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
     {
         var primaryKey = columns.Single(column => column.IsPrimaryKey);
         var insertableColumns = columns.Where(column => !column.IsPrimaryKey).ToArray();
+
+        // The SQL text must reference the real table name (often plural, e.g. "Orders"), regardless of
+        // what its C# entity/class should be called - that dialect call intentionally uses the raw
+        // tableName, never the singularized entityName below.
         var fragments = SqlDialect.Build(engine, tableName, primaryKey, insertableColumns);
+
+        // A domain entity is one row, so its C# type name must be singular ("Order") even when the table
+        // itself is named in the plural ("Orders") - the common real-world convention. Singularize() is
+        // idempotent on already-singular names, so tables like "Student" are unaffected.
+        var entityName = tableName.Singularize();
 
         var model = new CrudTemplateModel
         {
             RootNamespace = rootNamespace,
-            TableName = tableName,
-            PluralName = tableName.Pluralize(),
-            CamelName = tableName.Camelize(),
-            RouteSegment = tableName.Pluralize().ToLowerInvariant(),
+            TableName = entityName,
+            PluralName = entityName.Pluralize(),
+            CamelName = entityName.Camelize(),
+            RouteSegment = entityName.Pluralize().ToLowerInvariant(),
             Engine = engine.ToString(),
             Columns = columns.Select(ToColumnModel).ToArray(),
             InsertableColumns = insertableColumns.Select(ToColumnModel).ToArray(),
@@ -45,16 +54,16 @@ internal sealed class ScribanCrudFileGenerator : ICrudFileGenerator
 
         return
         [
-            new GeneratedFile($"Domain/{plural}/{tableName}.cs", Render("DomainEntity", model)),
-            new GeneratedFile($"Infrastructure/Persistence/{plural}/{tableName}DbEntity.cs", Render("DbEntity", model)),
-            new GeneratedFile($"Application/{plural}/{tableName}Request.cs", Render("Request", model)),
-            new GeneratedFile($"Application/{plural}/{tableName}Result.cs", Render("Result", model)),
-            new GeneratedFile($"Application/{plural}/I{tableName}Repository.cs", Render("IRepository", model)),
-            new GeneratedFile($"Infrastructure/Persistence/{plural}/{tableName}Repository.cs", Render("Repository", model)),
-            new GeneratedFile($"Application/{plural}/I{tableName}Service.cs", Render("IService", model)),
-            new GeneratedFile($"Application/{plural}/{tableName}Service.cs", Render("Service", model)),
-            new GeneratedFile($"Tests/Application/{plural}/{tableName}ServiceTests.cs", Render("ServiceTests", model)),
-            new GeneratedFile($"Api/Controllers/{plural}/{tableName}Controller.cs", Render("Controller", model))
+            new GeneratedFile($"Domain/{plural}/{entityName}.cs", Render("DomainEntity", model)),
+            new GeneratedFile($"Infrastructure/Persistence/{plural}/{entityName}DbEntity.cs", Render("DbEntity", model)),
+            new GeneratedFile($"Application/{plural}/{entityName}Request.cs", Render("Request", model)),
+            new GeneratedFile($"Application/{plural}/{entityName}Result.cs", Render("Result", model)),
+            new GeneratedFile($"Application/{plural}/I{entityName}Repository.cs", Render("IRepository", model)),
+            new GeneratedFile($"Infrastructure/Persistence/{plural}/{entityName}Repository.cs", Render("Repository", model)),
+            new GeneratedFile($"Application/{plural}/I{entityName}Service.cs", Render("IService", model)),
+            new GeneratedFile($"Application/{plural}/{entityName}Service.cs", Render("Service", model)),
+            new GeneratedFile($"Tests/Application/{plural}/{entityName}ServiceTests.cs", Render("ServiceTests", model)),
+            new GeneratedFile($"Api/Controllers/{plural}/{entityName}Controller.cs", Render("Controller", model))
         ];
     }
 

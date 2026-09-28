@@ -151,6 +151,38 @@ public sealed class ScribanCrudFileGeneratorTests
         Assert.Contains("Task<Result> DeleteStudentByIdAsync(int id", service);
     }
 
+    [Theory]
+    [InlineData("Orders", "Order", "Orders")]
+    [InlineData("Categories", "Category", "Categories")]
+    [InlineData("Student", "Student", "Students")]
+    public void GenerateSingularizesThePluralTableNameForTheDomainEntityButKeepsTheRealTableNameInSql(
+        string tableInput,
+        string expectedSingular,
+        string expectedPlural)
+    {
+        IReadOnlyCollection<TableColumn> columns =
+        [
+            TableColumn.Create("Id", "int", isNullable: false, isPrimaryKey: true, ordinalPosition: 1),
+            TableColumn.Create("Name", "string", isNullable: false, isPrimaryKey: false, ordinalPosition: 2)
+        ];
+
+        var generator = new ScribanCrudFileGenerator();
+
+        var files = generator.Generate(DatabaseEngine.SqlServer, tableInput, columns, "MyCustomizedFramework");
+
+        Assert.Contains(files, file => file.RelativePath == $"Domain/{expectedPlural}/{expectedSingular}.cs");
+
+        var entity = files.Single(file => file.RelativePath == $"Domain/{expectedPlural}/{expectedSingular}.cs").Content;
+        Assert.Contains($"public sealed class {expectedSingular}", entity);
+        Assert.Contains($"namespace MyCustomizedFramework.Domain.{expectedPlural};", entity);
+
+        var controller = files.Single(file => file.RelativePath == $"Api/Controllers/{expectedPlural}/{expectedSingular}Controller.cs").Content;
+        Assert.Contains($"[Route(\"api/{expectedPlural.ToLowerInvariant()}\")]", controller);
+
+        var repository = files.Single(file => file.RelativePath == $"Infrastructure/Persistence/{expectedPlural}/{expectedSingular}Repository.cs").Content;
+        Assert.Contains($"FROM [{tableInput}]", repository); // the real SQL table name, never singularized
+    }
+
     [Fact]
     public void GenerateRepositoryAndServiceInterfacesShareTheSameFeatureNamespace()
     {
