@@ -1,0 +1,24 @@
+using System.Data;
+using Microsoft.Extensions.Configuration;
+{{~ if engine == "SqlServer" ~}}
+using Microsoft.Data.SqlClient;
+{{~ else if engine == "PostgreSql" ~}}
+using Npgsql;
+{{~ else if engine == "MySql" ~}}
+using MySqlConnector;
+{{~ else if engine == "Oracle" ~}}
+using Oracle.ManagedDataAccess.Client;
+{{~ end ~}}
+using {{ root_namespace }}.Application.Abstractions.Persistence;
+
+namespace {{ root_namespace }}.Infrastructure.Persistence;
+
+/// <summary>
+/// Reads the "Default" connection string from configuration (appsettings.json, user secrets,
+/// environment variables, ...) and opens a connection for this app's one real database.
+/// </summary>
+public sealed class {{ engine }}ConnectionFactory(IConfiguration configuration) : IDbConnectionFactory
+{
+    public IDbConnection CreateConnection() =>
+        new {{ connection_type_name }}(configuration.GetConnectionString("Default"));
+}

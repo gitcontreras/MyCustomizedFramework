@@ -24,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<ICrudFileGenerator, ScribanCrudFileGenerator>();
         services.AddScoped<GenerateCrudHandler>();
 
+        services.AddScoped<IKernelFileGenerator, ScribanKernelFileGenerator>();
+
         return services;
     }
 }

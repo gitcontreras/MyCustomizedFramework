@@ -1,6 +1,7 @@
-namespace MyCustomizedFramework.Domain.Common;
+namespace {{ root_namespace }}.Domain.Common;
 
-// CA1716: "Error" intentionally matches the Result pattern's idiomatic naming.
+// CA1716: "Error" intentionally matches the Result pattern's idiomatic naming; this pragma keeps the
+// file self-contained so it compiles regardless of the target project's analyzer/NoWarn settings.
 #pragma warning disable CA1716
 public sealed record Error(string Code, string Message, ErrorType Type)
 {

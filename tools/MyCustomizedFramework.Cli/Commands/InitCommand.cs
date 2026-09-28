@@ -17,7 +17,10 @@ internal static class InitCommand
         }
 
         File.WriteAllText(configPath, CrudGenConfig.TemplateJson);
-        Console.WriteLine($"Wrote template config to '{configPath}'. Edit it, then run 'crudgen tables' or 'crudgen generate'.");
+        Console.WriteLine(
+            $"Wrote template config to '{configPath}'. Edit it with your real rootNamespace/connection/paths, "
+            + "then run 'crudgen init-kernel' to scaffold the shared Result/IDbConnectionFactory/ResultExtensions files.");
+
         return 0;
     }
 }
