@@ -1,0 +1,28 @@
+<script setup lang="ts">
+import { inputClassName } from './form-classes';
+
+defineProps<{
+  id: string;
+  invalid?: boolean;
+}>();
+
+const model = defineModel<number | null>({ required: true });
+
+function onInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value;
+  model.value = raw === '' ? null : Number(raw);
+}
+</script>
+
+<template>
+  <input
+    :id="id"
+    type="number"
+    step="any"
+    :value="model ?? ''"
+    :aria-invalid="invalid || undefined"
+    :aria-describedby="invalid ? `${id}-error` : undefined"
+    :class="inputClassName"
+    @input="onInput"
+  />
+</template>

@@ -1,0 +1,17 @@
+import { useNavigate } from 'react-router-dom';
+import { {{ entity_name }}List } from '../components/{{ entity_name }}List';
+
+export function {{ plural_name }}Page() {
+  const navigate = useNavigate();
+  const toPath = (id: {{ primary_key.ts_type }}) => encodeURIComponent(String(id));
+
+  return (
+    <section className="mx-auto max-w-5xl p-6">
+      <{{ entity_name }}List
+        onCreate={() => navigate('/{{ route_segment }}/new')}
+        onView={(id) => navigate(`/{{ route_segment }}/${toPath(id)}`)}
+        onEdit={(id) => navigate(`/{{ route_segment }}/${toPath(id)}/edit`)}
+      />
+    </section>
+  );
+}

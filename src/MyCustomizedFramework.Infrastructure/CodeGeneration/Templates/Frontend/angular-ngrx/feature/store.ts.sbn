@@ -1,0 +1,84 @@
+import { computed } from '@angular/core';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ plural_camel_name }}Api } from '../api/{{ folder_name }}.api';
+import type { {{ entity_name }}, {{ entity_name }}Input } from '../model/{{ file_stem }}.types';
+
+type Id = {{ primary_key.ts_type }};
+
+interface {{ plural_name }}State {
+  items: {{ entity_name }}[];
+  selected: {{ entity_name }} | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const initialState: {{ plural_name }}State = {
+  items: [],
+  selected: null,
+  isLoading: false,
+  error: null,
+};
+
+export const {{ plural_name }}Store = signalStore(
+  { providedIn: 'root' },
+  withState(initialState),
+  withComputed(({ items }) => ({
+    count: computed(() => items().length),
+  })),
+  withMethods((store) => {
+    async function run<T>(action: () => Promise<T>, onError: T): Promise<T> {
+      patchState(store, { isLoading: true, error: null });
+
+      try {
+        return await action();
+      } catch (cause) {
+        patchState(store, { error: toErrorMessage(cause) });
+        return onError;
+      } finally {
+        patchState(store, { isLoading: false });
+      }
+    }
+
+    return {
+      fetchAll: (): Promise<void> =>
+        run(async () => {
+          patchState(store, { items: await {{ plural_camel_name }}Api.getAll() });
+        }, undefined),
+
+      fetchById: (id: Id): Promise<{{ entity_name }} | null> =>
+        run(async () => {
+          const selected = await {{ plural_camel_name }}Api.getById(id);
+          patchState(store, { selected });
+          return selected;
+        }, null),
+
+      create: (input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> =>
+        run(async () => {
+          const created = await {{ plural_camel_name }}Api.create(input);
+          patchState(store, (state) => ({ items: [...state.items, created] }));
+          return created;
+        }, null),
+
+      update: (id: Id, input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> =>
+        run(async () => {
+          const updated = await {{ plural_camel_name }}Api.update(id, input);
+          patchState(store, (state) => ({
+            items: state.items.map((item) => (item.{{ primary_key.key }} === id ? updated : item)),
+            selected: updated,
+          }));
+          return updated;
+        }, null),
+
+      remove: (id: Id): Promise<boolean> =>
+        run(async () => {
+          await {{ plural_camel_name }}Api.remove(id);
+          patchState(store, (state) => ({ items: state.items.filter((item) => item.{{ primary_key.key }} !== id) }));
+          return true;
+        }, false),
+
+      clearError: (): void => patchState(store, { error: null }),
+      clearSelected: (): void => patchState(store, { selected: null }),
+    };
+  }),
+);

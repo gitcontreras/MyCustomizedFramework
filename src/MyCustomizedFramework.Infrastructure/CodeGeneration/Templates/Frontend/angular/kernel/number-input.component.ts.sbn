@@ -1,0 +1,30 @@
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { inputClassName } from './form-classes';
+
+@Component({
+  selector: 'app-number-input',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <input
+      type="number"
+      step="any"
+      [id]="fieldId()"
+      [value]="value() ?? ''"
+      [attr.aria-invalid]="invalid() || null"
+      [attr.aria-describedby]="invalid() ? fieldId() + '-error' : null"
+      [class]="inputClass"
+      (input)="onInput($event)"
+    />
+  `,
+})
+export class NumberInputComponent {
+  readonly fieldId = input.required<string>();
+  readonly invalid = input(false);
+  readonly value = model.required<number | null>();
+  protected readonly inputClass = inputClassName;
+
+  protected onInput(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    this.value.set(raw === '' ? null : Number(raw));
+  }
+}

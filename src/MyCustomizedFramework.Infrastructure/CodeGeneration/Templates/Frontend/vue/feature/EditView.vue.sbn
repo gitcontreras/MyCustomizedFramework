@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import {{ entity_name }}Form from '../components/{{ entity_name }}Form.vue';
+
+const router = useRouter();
+const route = useRoute();
+const id = computed(() => {
+  const raw = String(route.params.id);
+  return {{ if primary_key.is_number }}Number(raw){{ else }}raw{{ end }};
+});
+</script>
+
+<template>
+  <section class="mx-auto max-w-2xl p-6">
+    <{{ entity_name }}Form :id="id" @saved="router.push('/{{ route_segment }}')" @cancel="router.push('/{{ route_segment }}')" />
+  </section>
+</template>

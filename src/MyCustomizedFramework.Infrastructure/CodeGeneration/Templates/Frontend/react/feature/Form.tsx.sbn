@@ -1,0 +1,178 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { Alert } from '../../../shared/ui/Alert';
+import { FormField } from '../../../shared/ui/FormField';
+{{~
+  has_text = false
+  has_textarea = false
+  has_number = false
+  has_toggle = false
+  has_datetime = false
+  has_select = false
+  for f in form_fields
+    if f.control == 'textarea'
+      has_textarea = true
+    else if f.control == 'number'
+      has_number = true
+    else if f.control == 'checkbox'
+      has_toggle = true
+    else if f.control == 'datetime'
+      has_datetime = true
+    else if f.control == 'select'
+      has_select = true
+    else
+      has_text = true
+    end
+  end
+~}}
+{{~ if has_text }}
+import { TextInput } from '../../../shared/ui/TextInput';
+{{~ end }}
+{{~ if has_textarea }}
+import { TextAreaInput } from '../../../shared/ui/TextAreaInput';
+{{~ end }}
+{{~ if has_number }}
+import { NumberInput } from '../../../shared/ui/NumberInput';
+{{~ end }}
+{{~ if has_toggle }}
+import { ToggleInput } from '../../../shared/ui/ToggleInput';
+{{~ end }}
+{{~ if has_datetime }}
+import { DateTimeInput } from '../../../shared/ui/DateTimeInput';
+{{~ end }}
+{{~ if has_select }}
+import { SelectInput } from '../../../shared/ui/SelectInput';
+{{~ end }}
+{{~ if has_relations }}
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ for r in relations }}get{{ r.entity_name }}Options, type {{ r.entity_name }}Option{{ if !for.last }}, {{ end }}{{ end }} } from '../api/{{ folder_name }}.api';
+{{~ end }}
+import {
+  empty{{ entity_name }}FormValues,
+  to{{ entity_name }}FormValues,
+  to{{ entity_name }}Input,
+  type {{ entity_name }},
+  type {{ entity_name }}FormValues,
+} from '../model/{{ file_stem }}.types';
+import { validate{{ entity_name }}, type {{ entity_name }}Errors } from '../model/{{ file_stem }}.validation';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+interface {{ entity_name }}FormProps {
+  /** When provided the form edits that record; otherwise it creates a new one. */
+  id?: {{ primary_key.ts_type }};
+  onSaved: (saved: {{ entity_name }}) => void;
+  onCancel: () => void;
+}
+
+export function {{ entity_name }}Form({ id, onSaved, onCancel }: {{ entity_name }}FormProps) {
+  const { isLoading, error, fetchById, create, update, clearError } = use{{ plural_name }}Store();
+  const [values, setValues] = useState<{{ entity_name }}FormValues>(empty{{ entity_name }}FormValues);
+  const [errors, setErrors] = useState<{{ entity_name }}Errors>({});
+{{~ if has_relations }}
+  const [lookupError, setLookupError] = useState<string | null>(null);
+{{~ for r in relations }}
+  const [{{ r.camel_name }}Options, set{{ r.entity_name }}Options] = useState<{{ r.entity_name }}Option[]>([]);
+{{~ end }}
+{{~ end }}
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  useEffect(() => {
+    if (id === undefined) {
+      return;
+    }
+
+    let active = true;
+    void fetchById(id).then((entity) => {
+      if (active && entity) {
+        setValues(to{{ entity_name }}FormValues(entity));
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [id, fetchById]);
+{{~ if has_relations }}
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const report = (cause: unknown) => {
+      if (!controller.signal.aborted) {
+        setLookupError(toErrorMessage(cause));
+      }
+    };
+{{~ for r in relations }}
+
+    get{{ r.entity_name }}Options(controller.signal).then(set{{ r.entity_name }}Options).catch(report);
+{{~ end }}
+
+    return () => controller.abort();
+  }, []);
+{{~ end }}
+
+  function setValue<K extends keyof {{ entity_name }}FormValues>(key: K, value: {{ entity_name }}FormValues[K]) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validation = validate{{ entity_name }}(values);
+    setErrors(validation);
+
+    if (Object.keys(validation).length > 0) {
+      return;
+    }
+
+    const input = to{{ entity_name }}Input(values);
+    const saved = id !== undefined ? await update(id, input) : await create(input);
+
+    if (saved) {
+      onSaved(saved);
+    }
+  }
+
+  return (
+    <form onSubmit={(event) => void handleSubmit(event)} noValidate className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">{id !== undefined ? 'Edit {{ title }}' : 'New {{ title }}'}</h2>
+
+      {error ? <Alert message={error} onDismiss={clearError} /> : null}
+{{~ if has_relations }}
+      {lookupError ? <Alert message={lookupError} onDismiss={() => setLookupError(null)} /> : null}
+{{~ end }}
+{{~ for f in form_fields }}
+
+      <FormField id="{{ f.key }}" label="{{ f.label }}"{{ if f.is_required }} required{{ end }} error={errors['{{ f.key }}']}>
+{{~ if f.control == 'textarea' }}
+        <TextAreaInput id="{{ f.key }}" value={values['{{ f.key }}']} onChange={(value) => setValue('{{ f.key }}', value)} invalid={Boolean(errors['{{ f.key }}'])}{{ if f.max_length }} maxLength={ {{~ f.max_length ~}} }{{ end }} />
+{{~ else if f.control == 'number' }}
+        <NumberInput id="{{ f.key }}" value={values['{{ f.key }}']} onChange={(value) => setValue('{{ f.key }}', value)} invalid={Boolean(errors['{{ f.key }}'])} />
+{{~ else if f.control == 'checkbox' }}
+        <ToggleInput id="{{ f.key }}" checked={values['{{ f.key }}']} onChange={(value) => setValue('{{ f.key }}', value)} />
+{{~ else if f.control == 'datetime' }}
+        <DateTimeInput id="{{ f.key }}" value={values['{{ f.key }}']} onChange={(value) => setValue('{{ f.key }}', value)} invalid={Boolean(errors['{{ f.key }}'])} />
+{{~ else if f.control == 'select' }}
+{{~ if f.is_number }}
+        <SelectInput id="{{ f.key }}" value={values['{{ f.key }}']} options={ {{~ f.relation.camel_name ~}} Options} onChange={(value) => setValue('{{ f.key }}', value)} invalid={Boolean(errors['{{ f.key }}'])} />
+{{~ else }}
+        <SelectInput id="{{ f.key }}" value={values['{{ f.key }}']} options={ {{~ f.relation.camel_name ~}} Options} onChange={(value) => setValue('{{ f.key }}', value ?? '')} invalid={Boolean(errors['{{ f.key }}'])} />
+{{~ end }}
+{{~ else }}
+        <TextInput id="{{ f.key }}" type="{{ if f.control == 'time' }}time{{ else if f.control == 'email' }}email{{ else if f.control == 'password' }}password{{ else }}text{{ end }}" value={values['{{ f.key }}']} onChange={(value) => setValue('{{ f.key }}', value)} invalid={Boolean(errors['{{ f.key }}'])}{{ if f.max_length }} maxLength={ {{~ f.max_length ~}} }{{ end }} />
+{{~ end }}
+      </FormField>
+{{~ end }}
+
+      <div className="flex justify-end gap-3 pt-2">
+        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          Cancel
+        </button>
+        <button type="submit" disabled={isLoading} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
+          {isLoading ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+    </form>
+  );
+}

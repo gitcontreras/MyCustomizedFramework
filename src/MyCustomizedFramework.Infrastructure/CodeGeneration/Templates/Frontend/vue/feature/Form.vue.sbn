@@ -1,0 +1,168 @@
+<script setup lang="ts">
+{{~
+  has_text = false
+  has_textarea = false
+  has_number = false
+  has_toggle = false
+  has_datetime = false
+  has_select = false
+  for f in form_fields
+    if f.control == 'textarea'
+      has_textarea = true
+    else if f.control == 'number'
+      has_number = true
+    else if f.control == 'checkbox'
+      has_toggle = true
+    else if f.control == 'datetime'
+      has_datetime = true
+    else if f.control == 'select'
+      has_select = true
+    else
+      has_text = true
+    end
+  end
+~}}
+import { {{ if has_relations }}onBeforeUnmount, {{ end }}{{ if has_relations }}onMounted, {{ else }}onMounted, {{ end }}reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import Alert from '../../../shared/ui/Alert.vue';
+import FormField from '../../../shared/ui/FormField.vue';
+{{~ if has_text }}
+import TextInput from '../../../shared/ui/TextInput.vue';
+{{~ end }}
+{{~ if has_textarea }}
+import TextAreaInput from '../../../shared/ui/TextAreaInput.vue';
+{{~ end }}
+{{~ if has_number }}
+import NumberInput from '../../../shared/ui/NumberInput.vue';
+{{~ end }}
+{{~ if has_toggle }}
+import ToggleInput from '../../../shared/ui/ToggleInput.vue';
+{{~ end }}
+{{~ if has_datetime }}
+import DateTimeInput from '../../../shared/ui/DateTimeInput.vue';
+{{~ end }}
+{{~ if has_select }}
+import SelectInput from '../../../shared/ui/SelectInput.vue';
+{{~ end }}
+{{~ if has_relations }}
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ for r in relations }}get{{ r.entity_name }}Options, type {{ r.entity_name }}Option{{ if !for.last }}, {{ end }}{{ end }} } from '../api/{{ folder_name }}.api';
+{{~ end }}
+import {
+  empty{{ entity_name }}FormValues,
+  to{{ entity_name }}FormValues,
+  to{{ entity_name }}Input,
+  type {{ entity_name }},
+  type {{ entity_name }}FormValues,
+} from '../model/{{ file_stem }}.types';
+import { validate{{ entity_name }}, type {{ entity_name }}Errors } from '../model/{{ file_stem }}.validation';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+/** When `id` is provided the form edits that record; otherwise it creates a new one. */
+const props = defineProps<{ id?: {{ primary_key.ts_type }} }>();
+const emit = defineEmits<{ saved: [saved: {{ entity_name }}]; cancel: [] }>();
+
+const store = use{{ plural_name }}Store();
+const { isLoading, error } = storeToRefs(store);
+const values = reactive<{{ entity_name }}FormValues>({ ...empty{{ entity_name }}FormValues });
+const errors = ref<{{ entity_name }}Errors>({});
+{{~ if has_relations }}
+const lookupError = ref<string | null>(null);
+{{~ for r in relations }}
+const {{ r.camel_name }}Options = ref<{{ r.entity_name }}Option[]>([]);
+{{~ end }}
+{{~ end }}
+
+onMounted(() => store.clearError());
+
+watch(
+  () => props.id,
+  async (id) => {
+    if (id === undefined) {
+      return;
+    }
+
+    const entity = await store.fetchById(id);
+    if (entity) {
+      Object.assign(values, to{{ entity_name }}FormValues(entity));
+    }
+  },
+  { immediate: true },
+);
+{{~ if has_relations }}
+
+const lookupController = new AbortController();
+
+onMounted(() => {
+  const report = (cause: unknown) => {
+    if (!lookupController.signal.aborted) {
+      lookupError.value = toErrorMessage(cause);
+    }
+  };
+{{~ for r in relations }}
+
+  get{{ r.entity_name }}Options(lookupController.signal)
+    .then((options) => {
+      {{ r.camel_name }}Options.value = options;
+    })
+    .catch(report);
+{{~ end }}
+});
+
+onBeforeUnmount(() => lookupController.abort());
+{{~ end }}
+
+async function handleSubmit() {
+  const validation = validate{{ entity_name }}(values);
+  errors.value = validation;
+
+  if (Object.keys(validation).length > 0) {
+    return;
+  }
+
+  const input = to{{ entity_name }}Input(values);
+  const saved = props.id !== undefined ? await store.update(props.id, input) : await store.create(input);
+
+  if (saved) {
+    emit('saved', saved);
+  }
+}
+</script>
+
+<template>
+  <form novalidate class="space-y-4" @submit.prevent="handleSubmit">
+    <h2 class="text-lg font-semibold text-gray-900" v-text="props.id !== undefined ? 'Edit {{ title }}' : 'New {{ title }}'" />
+
+    <Alert v-if="error" :message="error" @dismiss="store.clearError()" />
+{{~ if has_relations }}
+    <Alert v-if="lookupError" :message="lookupError" @dismiss="lookupError = null" />
+{{~ end }}
+{{~ for f in form_fields }}
+
+    <FormField id="{{ f.key }}" label="{{ f.label }}"{{ if f.is_required }} required{{ end }} :error="errors.{{ f.key }}">
+{{~ if f.control == 'textarea' }}
+      <TextAreaInput id="{{ f.key }}" v-model="values.{{ f.key }}" :invalid="Boolean(errors.{{ f.key }})"{{ if f.max_length }} maxlength="{{ f.max_length }}"{{ end }} />
+{{~ else if f.control == 'number' }}
+      <NumberInput id="{{ f.key }}" v-model="values.{{ f.key }}" :invalid="Boolean(errors.{{ f.key }})" />
+{{~ else if f.control == 'checkbox' }}
+      <ToggleInput id="{{ f.key }}" v-model="values.{{ f.key }}" />
+{{~ else if f.control == 'datetime' }}
+      <DateTimeInput id="{{ f.key }}" v-model="values.{{ f.key }}" :invalid="Boolean(errors.{{ f.key }})" />
+{{~ else if f.control == 'select' }}
+{{~ if f.is_number }}
+      <SelectInput id="{{ f.key }}" :model-value="values.{{ f.key }}" :options="{{ f.relation.camel_name }}Options" :invalid="Boolean(errors.{{ f.key }})" @update:model-value="(value) => (values.{{ f.key }} = value === '' ? null : value)" />
+{{~ else }}
+      <SelectInput id="{{ f.key }}" :model-value="values.{{ f.key }}" :options="{{ f.relation.camel_name }}Options" :invalid="Boolean(errors.{{ f.key }})" @update:model-value="(value) => (values.{{ f.key }} = value ?? '')" />
+{{~ end }}
+{{~ else }}
+      <TextInput id="{{ f.key }}" v-model="values.{{ f.key }}" type="{{ if f.control == 'time' }}time{{ else if f.control == 'email' }}email{{ else if f.control == 'password' }}password{{ else }}text{{ end }}" :invalid="Boolean(errors.{{ f.key }})"{{ if f.max_length }} maxlength="{{ f.max_length }}"{{ end }} />
+{{~ end }}
+    </FormField>
+{{~ end }}
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="emit('cancel')">Cancel</button>
+      <button type="submit" :disabled="isLoading" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50" v-text="isLoading ? 'Saving...' : 'Save'" />
+    </div>
+  </form>
+</template>

@@ -1,0 +1,31 @@
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { inputClassName } from './form-classes';
+
+@Component({
+  selector: 'app-text-input',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <input
+      [id]="fieldId()"
+      [type]="type()"
+      [value]="value()"
+      [attr.maxlength]="maxLength()"
+      [attr.aria-invalid]="invalid() || null"
+      [attr.aria-describedby]="invalid() ? fieldId() + '-error' : null"
+      [class]="inputClass"
+      (input)="onInput($event)"
+    />
+  `,
+})
+export class TextInputComponent {
+  readonly fieldId = input.required<string>();
+  readonly type = input<'text' | 'email' | 'password' | 'time'>('text');
+  readonly maxLength = input<number | null>(null);
+  readonly invalid = input(false);
+  readonly value = model.required<string>();
+  protected readonly inputClass = inputClassName;
+
+  protected onInput(event: Event): void {
+    this.value.set((event.target as HTMLInputElement).value);
+  }
+}

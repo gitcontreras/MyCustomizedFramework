@@ -1,0 +1,8 @@
+export * from './model/{{ file_stem }}.types';
+export * from './model/{{ file_stem }}.validation';
+export { {{ plural_camel_name }}Api } from './api/{{ folder_name }}.api';
+export { use{{ plural_name }}Store } from './store/{{ folder_name }}.store';
+export { {{ entity_name }}List } from './components/{{ entity_name }}List';
+export { {{ entity_name }}Form } from './components/{{ entity_name }}Form';
+export { {{ entity_name }}Detail } from './components/{{ entity_name }}Detail';
+export { {{ plural_camel_name }}Routes } from './{{ folder_name }}.routes';

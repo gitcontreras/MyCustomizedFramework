@@ -1,0 +1,22 @@
+import type { InputHTMLAttributes } from 'react';
+import { inputClassName } from './FormField';
+
+interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'className'> {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  invalid?: boolean;
+}
+
+export function TextInput({ value, onChange, invalid, ...rest }: TextInputProps) {
+  return (
+    <input
+      {...rest}
+      value={value}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${rest.id}-error` : undefined}
+      className={inputClassName}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}

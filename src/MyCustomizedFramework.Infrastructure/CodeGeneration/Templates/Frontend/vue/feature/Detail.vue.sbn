@@ -1,0 +1,55 @@
+<script setup lang="ts">
+import { onBeforeUnmount, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import Alert from '../../../shared/ui/Alert.vue';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+const props = defineProps<{ id: {{ primary_key.ts_type }} }>();
+const emit = defineEmits<{ edit: []; back: [] }>();
+
+const store = use{{ plural_name }}Store();
+const { selected, isLoading, error } = storeToRefs(store);
+
+watch(
+  () => props.id,
+  (id) => {
+    void store.fetchById(id);
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => store.clearSelected());
+</script>
+
+<template>
+  <div class="space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900">{{ title }}</h2>
+
+    <Alert v-if="error" :message="error" @dismiss="store.clearError()" />
+    <p v-if="isLoading && !selected" class="text-sm text-gray-500">Loading...</p>
+
+    <dl v-if="selected" class="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white text-sm">
+{{~ for f in fields }}
+      <div class="grid grid-cols-3 gap-4 px-4 py-3">
+        <dt class="font-medium text-gray-600">{{ f.label }}</dt>
+{{~ if f.is_boolean }}
+        <dd class="col-span-2 text-gray-900" v-text="selected.{{ f.key }} ? 'Yes' : 'No'" />
+{{~ else if f.control == 'datetime' }}
+        <dd class="col-span-2 text-gray-900" v-text="selected.{{ f.key }} ? new Date(selected.{{ f.key }}).toLocaleString() : ''" />
+{{~ else if f.control == 'none' }}
+        <dd class="col-span-2 text-gray-500">(binary)</dd>
+{{~ else if f.control == 'password' }}
+        <dd class="col-span-2 text-gray-500">********</dd>
+{{~ else }}
+        <dd class="col-span-2 whitespace-pre-wrap text-gray-900" v-text="selected.{{ f.key }} ?? ''" />
+{{~ end }}
+      </div>
+{{~ end }}
+    </dl>
+
+    <div class="flex gap-3">
+      <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="emit('back')">Back</button>
+      <button type="button" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" @click="emit('edit')">Edit</button>
+    </div>
+  </div>
+</template>

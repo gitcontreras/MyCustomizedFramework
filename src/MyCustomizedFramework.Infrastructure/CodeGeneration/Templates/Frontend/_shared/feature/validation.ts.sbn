@@ -1,0 +1,29 @@
+import type { {{ entity_name }}FormValues } from './{{ file_stem }}.types';
+
+export type {{ entity_name }}Errors = Partial<Record<keyof {{ entity_name }}FormValues, string>>;
+
+export function validate{{ entity_name }}(values: {{ entity_name }}FormValues): {{ entity_name }}Errors {
+  const errors: {{ entity_name }}Errors = {};
+{{~ for f in form_fields }}
+{{~ if f.is_required && f.is_string }}
+
+  if (values.{{ f.key }}.trim() === '') {
+    errors.{{ f.key }} = '{{ f.label }} is required.';
+  }{{ if f.max_length }} else if (values.{{ f.key }}.length > {{ f.max_length }}) {
+    errors.{{ f.key }} = '{{ f.label }} must be at most {{ f.max_length }} characters.';
+  }{{ end }}
+{{~ else if f.is_required && f.is_number }}
+
+  if (values.{{ f.key }} === null) {
+    errors.{{ f.key }} = '{{ f.label }} is required.';
+  }
+{{~ else if f.is_string && f.max_length }}
+
+  if (values.{{ f.key }}.length > {{ f.max_length }}) {
+    errors.{{ f.key }} = '{{ f.label }} must be at most {{ f.max_length }} characters.';
+  }
+{{~ end }}
+{{~ end }}
+
+  return errors;
+}

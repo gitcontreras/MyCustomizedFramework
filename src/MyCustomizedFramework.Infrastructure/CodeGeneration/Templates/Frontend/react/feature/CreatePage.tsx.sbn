@@ -1,0 +1,12 @@
+import { useNavigate } from 'react-router-dom';
+import { {{ entity_name }}Form } from '../components/{{ entity_name }}Form';
+
+export function {{ entity_name }}CreatePage() {
+  const navigate = useNavigate();
+
+  return (
+    <section className="mx-auto max-w-2xl p-6">
+      <{{ entity_name }}Form onSaved={() => navigate('/{{ route_segment }}')} onCancel={() => navigate('/{{ route_segment }}')} />
+    </section>
+  );
+}

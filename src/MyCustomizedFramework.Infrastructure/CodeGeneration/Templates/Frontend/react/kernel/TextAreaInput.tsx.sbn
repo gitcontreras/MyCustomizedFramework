@@ -1,0 +1,23 @@
+import type { TextareaHTMLAttributes } from 'react';
+import { inputClassName } from './FormField';
+
+interface TextAreaInputProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange' | 'className'> {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  invalid?: boolean;
+}
+
+export function TextAreaInput({ value, onChange, invalid, rows = 4, ...rest }: TextAreaInputProps) {
+  return (
+    <textarea
+      {...rest}
+      rows={rows}
+      value={value}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${rest.id}-error` : undefined}
+      className={inputClassName}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}

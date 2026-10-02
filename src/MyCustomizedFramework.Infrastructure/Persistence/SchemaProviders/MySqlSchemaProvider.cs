@@ -36,7 +36,8 @@ internal sealed class MySqlSchemaProvider : SchemaProviderBase
         SELECT column_name AS Name,
                data_type AS DataType,
                CASE WHEN is_nullable = 'YES' THEN 1 ELSE 0 END AS IsNullable,
-               ordinal_position AS OrdinalPosition
+               ordinal_position AS OrdinalPosition,
+               CAST(character_maximum_length AS SIGNED) AS MaxLength
         FROM information_schema.columns
         WHERE table_schema = COALESCE(@Schema, DATABASE()) AND table_name = @TableName
         ORDER BY ordinal_position
@@ -47,6 +48,22 @@ internal sealed class MySqlSchemaProvider : SchemaProviderBase
         SELECT column_name
         FROM information_schema.key_column_usage
         WHERE table_schema = COALESCE(@Schema, DATABASE()) AND table_name = @TableName AND constraint_name = 'PRIMARY'
+        """;
+
+    protected override string ForeignKeysQuery =>
+        """
+        SELECT k.column_name AS ColumnName,
+               k.referenced_table_schema AS ReferencedSchema,
+               k.referenced_table_name AS ReferencedTable,
+               k.referenced_column_name AS ReferencedColumn
+        FROM information_schema.key_column_usage k
+        WHERE k.table_schema = COALESCE(@Schema, DATABASE())
+          AND k.table_name = @TableName
+          AND k.referenced_table_name IS NOT NULL
+          AND (SELECT COUNT(*) FROM information_schema.key_column_usage k2
+               WHERE k2.constraint_schema = k.constraint_schema
+                 AND k2.constraint_name = k.constraint_name
+                 AND k2.table_name = k.table_name) = 1
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

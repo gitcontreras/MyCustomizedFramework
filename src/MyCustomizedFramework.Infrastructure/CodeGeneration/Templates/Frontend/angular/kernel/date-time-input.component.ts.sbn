@@ -1,0 +1,44 @@
+import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { inputClassName } from './form-classes';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+@Component({
+  selector: 'app-date-time-input',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <input
+      type="datetime-local"
+      [id]="fieldId()"
+      [value]="localValue()"
+      [disabled]="disabled()"
+      [attr.aria-invalid]="invalid() || null"
+      [attr.aria-describedby]="invalid() ? fieldId() + '-error' : null"
+      [class]="inputClass"
+      (input)="onInput($event)"
+    />
+  `,
+})
+export class DateTimeInputComponent {
+  readonly fieldId = input.required<string>();
+  readonly invalid = input(false);
+  readonly disabled = input(false);
+  /** ISO 8601 string, or '' when empty. */
+  readonly value = model.required<string>();
+  protected readonly inputClass = inputClassName;
+
+  protected readonly localValue = computed(() => {
+    const date = new Date(this.value());
+
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  });
+
+  protected onInput(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    this.value.set(raw === '' ? '' : new Date(raw).toISOString());
+  }
+}

@@ -1,0 +1,12 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import {{ entity_name }}Form from '../components/{{ entity_name }}Form.vue';
+
+const router = useRouter();
+</script>
+
+<template>
+  <section class="mx-auto max-w-2xl p-6">
+    <{{ entity_name }}Form @saved="router.push('/{{ route_segment }}')" @cancel="router.push('/{{ route_segment }}')" />
+  </section>
+</template>

@@ -1,0 +1,21 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { {{ entity_name }}FormComponent } from '../components/{{ file_stem }}-form.component';
+
+@Component({
+  selector: 'app-{{ file_stem }}-create-page',
+  imports: [{{ entity_name }}FormComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="mx-auto max-w-2xl p-6">
+      <app-{{ file_stem }}-form (saved)="back()" (cancelled)="back()" />
+    </section>
+  `,
+})
+export class {{ entity_name }}CreatePage {
+  private readonly router = inject(Router);
+
+  protected back(): void {
+    void this.router.navigate(['/{{ route_segment }}']);
+  }
+}

@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import {{ entity_name }}List from '../components/{{ entity_name }}List.vue';
+
+const router = useRouter();
+const toPath = (id: {{ primary_key.ts_type }}) => encodeURIComponent(String(id));
+</script>
+
+<template>
+  <section class="mx-auto max-w-5xl p-6">
+    <{{ entity_name }}List
+      @create="router.push('/{{ route_segment }}/new')"
+      @view="(id) => router.push(`/{{ route_segment }}/${toPath(id)}`)"
+      @edit="(id) => router.push(`/{{ route_segment }}/${toPath(id)}/edit`)"
+    />
+  </section>
+</template>

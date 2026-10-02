@@ -36,7 +36,8 @@ internal sealed class PostgreSqlSchemaProvider : SchemaProviderBase
         SELECT column_name AS "Name",
                data_type AS "DataType",
                CASE WHEN is_nullable = 'YES' THEN 1 ELSE 0 END AS "IsNullable",
-               ordinal_position AS "OrdinalPosition"
+               ordinal_position AS "OrdinalPosition",
+               character_maximum_length AS "MaxLength"
         FROM information_schema.columns
         WHERE table_name = @TableName
           AND (@Schema::text IS NULL OR table_schema = @Schema)
@@ -54,6 +55,25 @@ internal sealed class PostgreSqlSchemaProvider : SchemaProviderBase
         WHERE tc.constraint_type = 'PRIMARY KEY'
           AND tc.table_name = @TableName
           AND (@Schema::text IS NULL OR tc.table_schema = @Schema)
+        """;
+
+    protected override string ForeignKeysQuery =>
+        """
+        SELECT a.attname AS "ColumnName",
+               rn.nspname AS "ReferencedSchema",
+               rc.relname AS "ReferencedTable",
+               ra.attname AS "ReferencedColumn"
+        FROM pg_constraint c
+        JOIN pg_class pc ON pc.oid = c.conrelid
+        JOIN pg_namespace pn ON pn.oid = pc.relnamespace
+        JOIN pg_class rc ON rc.oid = c.confrelid
+        JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+        JOIN pg_attribute ra ON ra.attrelid = c.confrelid AND ra.attnum = c.confkey[1]
+        WHERE c.contype = 'f'
+          AND array_length(c.conkey, 1) = 1
+          AND pc.relname = @TableName
+          AND (@Schema::text IS NULL OR pn.nspname = @Schema)
         """;
 
     protected override string MapToCSharpType(string dataType, bool isNullable) => AsNullable(

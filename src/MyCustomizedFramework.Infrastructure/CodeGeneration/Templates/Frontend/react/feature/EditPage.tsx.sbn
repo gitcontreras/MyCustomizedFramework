@@ -1,0 +1,21 @@
+import { useNavigate, useParams } from 'react-router-dom';
+import { {{ entity_name }}Form } from '../components/{{ entity_name }}Form';
+
+export function {{ entity_name }}EditPage() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+
+  if (id === undefined) {
+    return null;
+  }
+
+  return (
+    <section className="mx-auto max-w-2xl p-6">
+      <{{ entity_name }}Form
+        id={ {{~ if primary_key.is_number }}Number(id){{ else }}id{{ end ~}} }
+        onSaved={() => navigate('/{{ route_segment }}')}
+        onCancel={() => navigate('/{{ route_segment }}')}
+      />
+    </section>
+  );
+}

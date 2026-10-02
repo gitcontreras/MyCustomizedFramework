@@ -1,0 +1,82 @@
+import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
+import { AlertComponent } from '../../../shared/ui/alert.component';
+import { {{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+@Component({
+  selector: 'app-{{ file_stem }}-list',
+  imports: [AlertComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">{{ plural_title }}</h2>
+        <button type="button" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" (click)="create.emit()">
+          New {{ title }}
+        </button>
+      </div>
+
+      @if (store.error(); as message) {
+        <app-alert [message]="message" (dismissed)="store.clearError()" />
+      }
+
+      <div class="overflow-x-auto rounded-md border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+{{~ for f in list_fields }}
+              <th scope="col" class="px-4 py-3 text-left font-medium text-gray-600">{{ f.label }}</th>
+{{~ end }}
+              <th scope="col" class="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 bg-white">
+            @if (store.isLoading() && store.items().length === 0) {
+              <tr><td colspan="{{ list_fields.size + 1 }}" class="px-4 py-6 text-center text-gray-500">Loading...</td></tr>
+            } @else if (store.items().length === 0) {
+              <tr><td colspan="{{ list_fields.size + 1 }}" class="px-4 py-6 text-center text-gray-500">No records found.</td></tr>
+            }
+            @for (item of store.items(); track item.{{ primary_key.key }}) {
+              <tr>
+{{~ for f in list_fields }}
+{{~ if f.is_boolean }}
+                <td class="px-4 py-3" [textContent]="item.{{ f.key }} ? 'Yes' : 'No'"></td>
+{{~ else if f.control == 'datetime' }}
+                <td class="px-4 py-3" [textContent]="formatDate(item.{{ f.key }})"></td>
+{{~ else }}
+                <td class="px-4 py-3" [textContent]="item.{{ f.key }}{{ if f.is_nullable }} ?? ''{{ end }}"></td>
+{{~ end }}
+{{~ end }}
+                <td class="space-x-3 px-4 py-3 text-right">
+                  <button type="button" class="text-indigo-600 hover:underline" (click)="view.emit(item.{{ primary_key.key }})">View</button>
+                  <button type="button" class="text-indigo-600 hover:underline" (click)="edit.emit(item.{{ primary_key.key }})">Edit</button>
+                  <button type="button" class="text-red-600 hover:underline" (click)="handleDelete(item.{{ primary_key.key }})">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `,
+})
+export class {{ entity_name }}ListComponent {
+  protected readonly store = inject({{ plural_name }}Store);
+
+  readonly create = output<void>();
+  readonly view = output<{{ primary_key.ts_type }}>();
+  readonly edit = output<{{ primary_key.ts_type }}>();
+
+  constructor() {
+    void this.store.fetchAll();
+  }
+
+  protected formatDate(value: string | null): string {
+    return value ? new Date(value).toLocaleString() : '';
+  }
+
+  protected async handleDelete(id: {{ primary_key.ts_type }}): Promise<void> {
+    if (window.confirm('Delete this {{ title }}?')) {
+      await this.store.remove(id);
+    }
+  }
+}

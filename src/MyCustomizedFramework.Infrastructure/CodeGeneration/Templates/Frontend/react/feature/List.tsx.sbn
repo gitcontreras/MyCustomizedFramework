@@ -1,0 +1,83 @@
+import { useEffect } from 'react';
+import { Alert } from '../../../shared/ui/Alert';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+interface {{ entity_name }}ListProps {
+  onCreate: () => void;
+  onView: (id: {{ primary_key.ts_type }}) => void;
+  onEdit: (id: {{ primary_key.ts_type }}) => void;
+}
+
+export function {{ entity_name }}List({ onCreate, onView, onEdit }: {{ entity_name }}ListProps) {
+  const { items, isLoading, error, fetchAll, remove, clearError } = use{{ plural_name }}Store();
+
+  useEffect(() => {
+    void fetchAll();
+  }, [fetchAll]);
+
+  async function handleDelete(id: {{ primary_key.ts_type }}) {
+    if (window.confirm('Delete this {{ title }}?')) {
+      await remove(id);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">{{ plural_title }}</h2>
+        <button
+          type="button"
+          onClick={onCreate}
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+        >
+          New {{ title }}
+        </button>
+      </div>
+
+      {error ? <Alert message={error} onDismiss={clearError} /> : null}
+
+      <div className="overflow-x-auto rounded-md border border-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+{{~ for f in list_fields }}
+              <th scope="col" className="px-4 py-3 text-left font-medium text-gray-600">{{ f.label }}</th>
+{{~ end }}
+              <th scope="col" className="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {isLoading && items.length === 0 ? (
+              <tr>
+                <td colSpan={ {{~ list_fields.size + 1 ~}} } className="px-4 py-6 text-center text-gray-500">Loading...</td>
+              </tr>
+            ) : null}
+            {!isLoading && items.length === 0 ? (
+              <tr>
+                <td colSpan={ {{~ list_fields.size + 1 ~}} } className="px-4 py-6 text-center text-gray-500">No records found.</td>
+              </tr>
+            ) : null}
+            {items.map((item) => (
+              <tr key={String(item.{{ primary_key.key }})}>
+{{~ for f in list_fields }}
+{{~ if f.is_boolean }}
+                <td className="px-4 py-3">{item.{{ f.key }} ? 'Yes' : 'No'}</td>
+{{~ else if f.control == 'datetime' }}
+                <td className="px-4 py-3">{item.{{ f.key }} ? new Date(item.{{ f.key }}).toLocaleString() : ''}</td>
+{{~ else }}
+                <td className="px-4 py-3">{item.{{ f.key }} ?? ''}</td>
+{{~ end }}
+{{~ end }}
+                <td className="space-x-3 px-4 py-3 text-right">
+                  <button type="button" onClick={() => onView(item.{{ primary_key.key }})} className="text-indigo-600 hover:underline">View</button>
+                  <button type="button" onClick={() => onEdit(item.{{ primary_key.key }})} className="text-indigo-600 hover:underline">Edit</button>
+                  <button type="button" onClick={() => void handleDelete(item.{{ primary_key.key }})} className="text-red-600 hover:underline">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

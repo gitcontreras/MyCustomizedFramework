@@ -21,4 +21,12 @@ public interface ISchemaProvider
         string? schema,
         string tableName,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Single-column foreign keys declared on the table. Providers that cannot read them return none.</summary>
+    Task<IReadOnlyCollection<TableForeignKey>> GetForeignKeysAsync(
+        DatabaseConnectionDetails connection,
+        string? schema,
+        string tableName,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyCollection<TableForeignKey>>([]);
 }

@@ -1,0 +1,26 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+
+@Component({
+  selector: 'app-form-field',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="space-y-1">
+      <label [attr.for]="fieldId()" class="block text-sm font-medium text-gray-700">
+        <span [textContent]="label()"></span>
+        @if (required()) {
+          <span class="ml-0.5 text-red-600">*</span>
+        }
+      </label>
+      <ng-content />
+      @if (error()) {
+        <p [id]="fieldId() + '-error'" role="alert" class="text-sm text-red-600" [textContent]="error()"></p>
+      }
+    </div>
+  `,
+})
+export class FormFieldComponent {
+  readonly fieldId = input.required<string>();
+  readonly label = input.required<string>();
+  readonly required = input(false);
+  readonly error = input<string | undefined>(undefined);
+}

@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using MyCustomizedFramework.Application.Abstractions.CodeGeneration;
 using MyCustomizedFramework.Application.Abstractions.Persistence;
 using MyCustomizedFramework.Application.CrudGeneration;
+using MyCustomizedFramework.Application.FrontendGeneration;
+using MyCustomizedFramework.Infrastructure.CodeGeneration.Frontend;
 using MyCustomizedFramework.Application.SchemaExplorer;
 using MyCustomizedFramework.Domain.SchemaExplorer;
 using MyCustomizedFramework.Infrastructure.CodeGeneration;
@@ -25,6 +27,10 @@ public static class DependencyInjection
         services.AddScoped<GenerateCrudHandler>();
 
         services.AddScoped<IKernelFileGenerator, ScribanKernelFileGenerator>();
+
+        services.AddScoped<IFrontendFileGenerator, ScribanFrontendFileGenerator>();
+        services.AddScoped<GenerateFrontendHandler>();
+        services.AddScoped<GenerateFrontendKernelHandler>();
 
         return services;
     }

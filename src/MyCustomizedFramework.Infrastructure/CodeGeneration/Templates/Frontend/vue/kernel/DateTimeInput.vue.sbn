@@ -1,0 +1,43 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { inputClassName } from './form-classes';
+
+defineProps<{
+  id: string;
+  invalid?: boolean;
+  disabled?: boolean;
+}>();
+
+/** ISO 8601 string, or '' when empty. */
+const model = defineModel<string>({ required: true });
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const localValue = computed(() => {
+  const date = new Date(model.value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+});
+
+function onInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value;
+  model.value = raw === '' ? '' : new Date(raw).toISOString();
+}
+</script>
+
+<template>
+  <input
+    :id="id"
+    type="datetime-local"
+    :value="localValue"
+    :disabled="disabled"
+    :aria-invalid="invalid || undefined"
+    :aria-describedby="invalid ? `${id}-error` : undefined"
+    :class="inputClassName"
+    @input="onInput"
+  />
+</template>

@@ -1,0 +1,9 @@
+import type { RouteRecordRaw } from 'vue-router';
+
+/** Spread into your router config, e.g. createRouter({ routes: [...{{ plural_camel_name }}Routes] }). */
+export const {{ plural_camel_name }}Routes: RouteRecordRaw[] = [
+  { path: '/{{ route_segment }}', component: () => import('./views/{{ plural_name }}View.vue') },
+  { path: '/{{ route_segment }}/new', component: () => import('./views/{{ entity_name }}CreateView.vue') },
+  { path: '/{{ route_segment }}/:id', component: () => import('./views/{{ entity_name }}DetailView.vue') },
+  { path: '/{{ route_segment }}/:id/edit', component: () => import('./views/{{ entity_name }}EditView.vue') },
+];

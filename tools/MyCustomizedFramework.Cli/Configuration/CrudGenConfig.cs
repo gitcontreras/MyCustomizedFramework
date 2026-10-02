@@ -14,7 +14,15 @@ internal sealed class CrudGenConfig
     [JsonPropertyName("paths")]
     public Dictionary<string, string> Paths { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
-    public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+    [JsonPropertyName("frontend")]
+    public FrontendConfig? Frontend { get; set; }
+
+    public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
     public static CrudGenConfig Load(string path)
     {
@@ -40,6 +48,13 @@ internal sealed class CrudGenConfig
             "Infrastructure": "src/YourCompany.YourProject.Infrastructure",
             "Api": "src/YourCompany.YourProject.Api",
             "Tests": "tests/YourCompany.YourProject.UnitTests"
+          },
+          // Optional: used by 'generate --with-frontend' / '--frontend-only'.
+          "frontend": {
+            "framework": "react",          // "react" | "angular" | "vue"
+            "stateManagement": "zustand",  // react: zustand | vue: pinia | angular: signals, ngrx
+            "path": "frontend/src",
+            "styles": "tailwind"           // "tailwind"
           }
         }
 
@@ -63,3 +78,5 @@ internal sealed class ConnectionConfig
     [JsonPropertyName("user")]
     public string? User { get; set; }
 }
+
+

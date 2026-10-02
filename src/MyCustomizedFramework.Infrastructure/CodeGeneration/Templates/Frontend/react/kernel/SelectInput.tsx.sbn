@@ -1,0 +1,48 @@
+import { inputClassName } from './FormField';
+
+export interface SelectOption<T extends string | number> {
+  value: T;
+  label: string;
+}
+
+interface SelectInputProps<T extends string | number> {
+  id: string;
+  value: T | null | '';
+  options: SelectOption<T>[];
+  onChange: (value: T | null) => void;
+  placeholder?: string;
+  invalid?: boolean;
+  disabled?: boolean;
+}
+
+export function SelectInput<T extends string | number>({
+  id,
+  value,
+  options,
+  onChange,
+  placeholder = 'Select...',
+  invalid,
+  disabled,
+}: SelectInputProps<T>) {
+  return (
+    <select
+      id={id}
+      value={value ?? ''}
+      disabled={disabled}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${id}-error` : undefined}
+      className={inputClassName}
+      onChange={(event) => {
+        const selected = options.find((option) => String(option.value) === event.target.value);
+        onChange(selected ? selected.value : null);
+      }}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={String(option.value)} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}

@@ -1,0 +1,76 @@
+import { ref } from 'vue';
+import { defineStore } from 'pinia';
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ plural_camel_name }}Api } from '../api/{{ folder_name }}.api';
+import type { {{ entity_name }}, {{ entity_name }}Input } from '../model/{{ file_stem }}.types';
+
+type Id = {{ primary_key.ts_type }};
+
+export const use{{ plural_name }}Store = defineStore('{{ folder_name }}', () => {
+  const items = ref<{{ entity_name }}[]>([]);
+  const selected = ref<{{ entity_name }} | null>(null);
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
+
+  async function run<T>(action: () => Promise<T>, onError: T): Promise<T> {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      return await action();
+    } catch (cause) {
+      error.value = toErrorMessage(cause);
+      return onError;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchAll(): Promise<void> {
+    await run(async () => {
+      items.value = await {{ plural_camel_name }}Api.getAll();
+    }, undefined);
+  }
+
+  function fetchById(id: Id): Promise<{{ entity_name }} | null> {
+    return run(async () => {
+      selected.value = await {{ plural_camel_name }}Api.getById(id);
+      return selected.value;
+    }, null);
+  }
+
+  function create(input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> {
+    return run(async () => {
+      const created = await {{ plural_camel_name }}Api.create(input);
+      items.value = [...items.value, created];
+      return created;
+    }, null);
+  }
+
+  function update(id: Id, input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> {
+    return run(async () => {
+      const updated = await {{ plural_camel_name }}Api.update(id, input);
+      items.value = items.value.map((item) => (item.{{ primary_key.key }} === id ? updated : item));
+      selected.value = updated;
+      return updated;
+    }, null);
+  }
+
+  function remove(id: Id): Promise<boolean> {
+    return run(async () => {
+      await {{ plural_camel_name }}Api.remove(id);
+      items.value = items.value.filter((item) => item.{{ primary_key.key }} !== id);
+      return true;
+    }, false);
+  }
+
+  const clearError = () => {
+    error.value = null;
+  };
+
+  const clearSelected = () => {
+    selected.value = null;
+  };
+
+  return { items, selected, isLoading, error, fetchAll, fetchById, create, update, remove, clearError, clearSelected };
+});

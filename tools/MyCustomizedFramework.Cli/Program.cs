@@ -14,6 +14,7 @@ return subcommand.ToLowerInvariant() switch
     "generate" => await GenerateCommand.RunAsync(rest),
     "init" => InitCommand.Run(rest),
     "init-kernel" => InitKernelCommand.Run(rest),
+    "init-web" => InitWebCommand.Run(rest),
     _ => PrintUsage()
 };
 
@@ -25,6 +26,9 @@ static int PrintUsage()
           crudgen tables      --engine <sql|postgres|mysql|oracle> --server <host> [--port N] --database <name> [--user <user>] [--password <pwd>] [--config <path>]
           crudgen generate    --table <[Schema.]Name>[,<[Schema.]Name>...] [--force] [--root-namespace <Namespace>] [connection flags as above]
           crudgen generate    --all-tables [--force] [--root-namespace <Namespace>] [connection flags as above]
+          crudgen generate    --table <...> --with-frontend [--frontend react] [--state zustand] [--styles tailwind]   (backend + web)
+          crudgen generate    --table <...> --frontend-only [--frontend ...]                                         (web only)
+          crudgen init-web    [--config <path>] [--force] [--frontend ...]                                           (shared web kernel only)
           crudgen init        [--config <path>] [--force]
           crudgen init-kernel [--config <path>] [--force] [--engine ...] [--root-namespace ...]
 
@@ -36,3 +40,4 @@ static int PrintUsage()
         """);
     return 1;
 }
+

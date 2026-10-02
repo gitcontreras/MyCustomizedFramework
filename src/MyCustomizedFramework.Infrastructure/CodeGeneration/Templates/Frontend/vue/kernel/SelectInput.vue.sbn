@@ -1,0 +1,37 @@
+<script setup lang="ts" generic="T extends string | number">
+import { inputClassName } from './form-classes';
+
+const props = withDefaults(
+  defineProps<{
+    id: string;
+    options: { value: T; label: string }[];
+    placeholder?: string;
+    invalid?: boolean;
+    disabled?: boolean;
+  }>(),
+  { placeholder: 'Select...' },
+);
+
+const model = defineModel<T | null | ''>({ required: true });
+
+function onChange(event: Event) {
+  const raw = (event.target as HTMLSelectElement).value;
+  const selected = props.options.find((option) => String(option.value) === raw);
+  model.value = selected ? selected.value : null;
+}
+</script>
+
+<template>
+  <select
+    :id="id"
+    :value="model ?? ''"
+    :disabled="disabled"
+    :aria-invalid="invalid || undefined"
+    :aria-describedby="invalid ? `${id}-error` : undefined"
+    :class="inputClassName"
+    @change="onChange"
+  >
+    <option value="" v-text="placeholder" />
+    <option v-for="option in options" :key="String(option.value)" :value="option.value" v-text="option.label" />
+  </select>
+</template>

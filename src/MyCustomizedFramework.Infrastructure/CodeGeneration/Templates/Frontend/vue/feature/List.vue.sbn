@@ -1,0 +1,79 @@
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import Alert from '../../../shared/ui/Alert.vue';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+const emit = defineEmits<{
+  create: [];
+  view: [id: {{ primary_key.ts_type }}];
+  edit: [id: {{ primary_key.ts_type }}];
+}>();
+
+const store = use{{ plural_name }}Store();
+const { items, isLoading, error } = storeToRefs(store);
+
+onMounted(() => {
+  void store.fetchAll();
+});
+
+async function handleDelete(id: {{ primary_key.ts_type }}) {
+  if (window.confirm('Delete this {{ title }}?')) {
+    await store.remove(id);
+  }
+}
+</script>
+
+<template>
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">{{ plural_title }}</h2>
+      <button
+        type="button"
+        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+        @click="emit('create')"
+      >
+        New {{ title }}
+      </button>
+    </div>
+
+    <Alert v-if="error" :message="error" @dismiss="store.clearError()" />
+
+    <div class="overflow-x-auto rounded-md border border-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+{{~ for f in list_fields }}
+            <th scope="col" class="px-4 py-3 text-left font-medium text-gray-600">{{ f.label }}</th>
+{{~ end }}
+            <th scope="col" class="px-4 py-3 text-right font-medium text-gray-600">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          <tr v-if="isLoading && items.length === 0">
+            <td :colspan="{{ list_fields.size + 1 }}" class="px-4 py-6 text-center text-gray-500">Loading...</td>
+          </tr>
+          <tr v-else-if="items.length === 0">
+            <td :colspan="{{ list_fields.size + 1 }}" class="px-4 py-6 text-center text-gray-500">No records found.</td>
+          </tr>
+          <tr v-for="item in items" :key="String(item.{{ primary_key.key }})">
+{{~ for f in list_fields }}
+{{~ if f.is_boolean }}
+            <td class="px-4 py-3" v-text="item.{{ f.key }} ? 'Yes' : 'No'" />
+{{~ else if f.control == 'datetime' }}
+            <td class="px-4 py-3" v-text="item.{{ f.key }} ? new Date(item.{{ f.key }}).toLocaleString() : ''" />
+{{~ else }}
+            <td class="px-4 py-3" v-text="item.{{ f.key }} ?? ''" />
+{{~ end }}
+{{~ end }}
+            <td class="space-x-3 px-4 py-3 text-right">
+              <button type="button" class="text-indigo-600 hover:underline" @click="emit('view', item.{{ primary_key.key }})">View</button>
+              <button type="button" class="text-indigo-600 hover:underline" @click="emit('edit', item.{{ primary_key.key }})">Edit</button>
+              <button type="button" class="text-red-600 hover:underline" @click="handleDelete(item.{{ primary_key.key }})">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>

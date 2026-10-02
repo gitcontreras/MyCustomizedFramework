@@ -1,0 +1,58 @@
+import { useEffect } from 'react';
+import { Alert } from '../../../shared/ui/Alert';
+import { use{{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+interface {{ entity_name }}DetailProps {
+  id: {{ primary_key.ts_type }};
+  onEdit: () => void;
+  onBack: () => void;
+}
+
+export function {{ entity_name }}Detail({ id, onEdit, onBack }: {{ entity_name }}DetailProps) {
+  const { selected, isLoading, error, fetchById, clearSelected, clearError } = use{{ plural_name }}Store();
+
+  useEffect(() => {
+    void fetchById(id);
+
+    return () => clearSelected();
+  }, [id, fetchById, clearSelected]);
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">{{ title }}</h2>
+
+      {error ? <Alert message={error} onDismiss={clearError} /> : null}
+      {isLoading && !selected ? <p className="text-sm text-gray-500">Loading...</p> : null}
+
+      {selected ? (
+        <dl className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white text-sm">
+{{~ for f in fields }}
+          <div className="grid grid-cols-3 gap-4 px-4 py-3">
+            <dt className="font-medium text-gray-600">{{ f.label }}</dt>
+{{~ if f.is_boolean }}
+            <dd className="col-span-2 text-gray-900">{selected.{{ f.key }} ? 'Yes' : 'No'}</dd>
+{{~ else if f.control == 'datetime' }}
+            <dd className="col-span-2 text-gray-900">{selected.{{ f.key }} ? new Date(selected.{{ f.key }}).toLocaleString() : ''}</dd>
+{{~ else if f.control == 'none' }}
+            <dd className="col-span-2 text-gray-500">(binary)</dd>
+{{~ else if f.control == 'password' }}
+            <dd className="col-span-2 text-gray-500">********</dd>
+{{~ else }}
+            <dd className="col-span-2 whitespace-pre-wrap text-gray-900">{selected.{{ f.key }} ?? ''}</dd>
+{{~ end }}
+          </div>
+{{~ end }}
+        </dl>
+      ) : null}
+
+      <div className="flex gap-3">
+        <button type="button" onClick={onBack} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          Back
+        </button>
+        <button type="button" onClick={onEdit} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+          Edit
+        </button>
+      </div>
+    </div>
+  );
+}

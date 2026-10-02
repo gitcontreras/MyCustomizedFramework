@@ -1,0 +1,25 @@
+<script setup lang="ts">
+import { inputClassName } from './form-classes';
+
+withDefaults(
+  defineProps<{
+    id: string;
+    invalid?: boolean;
+    rows?: number;
+  }>(),
+  { rows: 4 },
+);
+
+const model = defineModel<string>({ required: true });
+</script>
+
+<template>
+  <textarea
+    :id="id"
+    v-model="model"
+    :rows="rows"
+    :aria-invalid="invalid || undefined"
+    :aria-describedby="invalid ? `${id}-error` : undefined"
+    :class="inputClassName"
+  />
+</template>

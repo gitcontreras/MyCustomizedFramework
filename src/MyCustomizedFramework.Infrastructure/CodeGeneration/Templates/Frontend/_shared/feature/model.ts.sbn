@@ -1,0 +1,47 @@
+export interface {{ entity_name }} {
+{{~ for f in fields }}
+  {{ f.key }}: {{ f.ts_type }}{{ if f.is_nullable }} | null{{ end }};
+{{~ end }}
+}
+
+/** Payload accepted by create and update. */
+export interface {{ entity_name }}Input {
+{{~ for f in request_fields }}
+  {{ f.key }}{{ if f.control == 'none' }}?{{ end }}: {{ f.ts_type }}{{ if f.is_nullable }} | null{{ end }};
+{{~ end }}
+}
+
+/** Shape of the form while it is being edited (numbers and selects can be empty). */
+export interface {{ entity_name }}FormValues {
+{{~ for f in form_fields }}
+  {{ f.key }}: {{ f.form_ts_type }};
+{{~ end }}
+}
+
+export const empty{{ entity_name }}FormValues: {{ entity_name }}FormValues = {
+{{~ for f in form_fields }}
+  {{ f.key }}: {{ f.initial_value }},
+{{~ end }}
+};
+
+export function to{{ entity_name }}FormValues(entity: {{ entity_name }}): {{ entity_name }}FormValues {
+  return {
+{{~ for f in form_fields }}
+    {{ f.key }}: entity.{{ f.key }}{{ if f.is_nullable && !f.is_number && !f.is_boolean }} ?? ''{{ end }}{{ if f.is_nullable && f.is_boolean }} ?? false{{ end }},
+{{~ end }}
+  };
+}
+
+export function to{{ entity_name }}Input(values: {{ entity_name }}FormValues): {{ entity_name }}Input {
+  return {
+{{~ for f in form_fields }}
+{{~ if f.is_number && f.is_required }}
+    {{ f.key }}: values.{{ f.key }} as number,
+{{~ else if f.is_string && f.is_nullable }}
+    {{ f.key }}: values.{{ f.key }}.trim() === '' ? null : values.{{ f.key }},
+{{~ else }}
+    {{ f.key }}: values.{{ f.key }},
+{{~ end }}
+{{~ end }}
+  };
+}

@@ -1,0 +1,39 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
+import { {{ entity_name }}DetailComponent } from '../components/{{ file_stem }}-detail.component';
+
+@Component({
+  selector: 'app-{{ file_stem }}-detail-page',
+  imports: [{{ entity_name }}DetailComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="mx-auto max-w-2xl p-6">
+      @if (id(); as id) {
+        <app-{{ file_stem }}-detail [id]="id" (edit)="edit(id)" (back)="back()" />
+      }
+    </section>
+  `,
+})
+export class {{ entity_name }}DetailPage {
+  private readonly router = inject(Router);
+
+  protected readonly id = toSignal(
+    inject(ActivatedRoute).paramMap.pipe(
+      map((params) => {
+        const raw = params.get('id');
+        return raw === null ? undefined : {{ if primary_key.is_number }}Number(raw){{ else }}raw{{ end }};
+      }),
+    ),
+    { requireSync: true },
+  );
+
+  protected edit(id: {{ primary_key.ts_type }}): void {
+    void this.router.navigate(['/{{ route_segment }}', String(id), 'edit']);
+  }
+
+  protected back(): void {
+    void this.router.navigate(['/{{ route_segment }}']);
+  }
+}

@@ -1,0 +1,95 @@
+import { create } from 'zustand';
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ plural_camel_name }}Api } from '../api/{{ folder_name }}.api';
+import type { {{ entity_name }}, {{ entity_name }}Input } from '../model/{{ file_stem }}.types';
+
+type Id = {{ primary_key.ts_type }};
+
+interface {{ plural_name }}State {
+  items: {{ entity_name }}[];
+  selected: {{ entity_name }} | null;
+  isLoading: boolean;
+  error: string | null;
+  fetchAll: () => Promise<void>;
+  fetchById: (id: Id) => Promise<{{ entity_name }} | null>;
+  create: (input: {{ entity_name }}Input) => Promise<{{ entity_name }} | null>;
+  update: (id: Id, input: {{ entity_name }}Input) => Promise<{{ entity_name }} | null>;
+  remove: (id: Id) => Promise<boolean>;
+  clearError: () => void;
+  clearSelected: () => void;
+}
+
+export const use{{ plural_name }}Store = create<{{ plural_name }}State>()((set) => ({
+  items: [],
+  selected: null,
+  isLoading: false,
+  error: null,
+
+  fetchAll: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await {{ plural_camel_name }}Api.getAll();
+      set({ items, isLoading: false });
+    } catch (error) {
+      set({ error: toErrorMessage(error), isLoading: false });
+    }
+  },
+
+  fetchById: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const selected = await {{ plural_camel_name }}Api.getById(id);
+      set({ selected, isLoading: false });
+      return selected;
+    } catch (error) {
+      set({ error: toErrorMessage(error), isLoading: false });
+      return null;
+    }
+  },
+
+  create: async (input) => {
+    set({ isLoading: true, error: null });
+    try {
+      const created = await {{ plural_camel_name }}Api.create(input);
+      set((state) => ({ items: [...state.items, created], isLoading: false }));
+      return created;
+    } catch (error) {
+      set({ error: toErrorMessage(error), isLoading: false });
+      return null;
+    }
+  },
+
+  update: async (id, input) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updated = await {{ plural_camel_name }}Api.update(id, input);
+      set((state) => ({
+        items: state.items.map((item) => (item.{{ primary_key.key }} === id ? updated : item)),
+        selected: updated,
+        isLoading: false,
+      }));
+      return updated;
+    } catch (error) {
+      set({ error: toErrorMessage(error), isLoading: false });
+      return null;
+    }
+  },
+
+  remove: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await {{ plural_camel_name }}Api.remove(id);
+      set((state) => ({
+        items: state.items.filter((item) => item.{{ primary_key.key }} !== id),
+        isLoading: false,
+      }));
+      return true;
+    } catch (error) {
+      set({ error: toErrorMessage(error), isLoading: false });
+      return false;
+    }
+  },
+
+  clearError: () => set({ error: null }),
+  clearSelected: () => set({ selected: null }),
+}));

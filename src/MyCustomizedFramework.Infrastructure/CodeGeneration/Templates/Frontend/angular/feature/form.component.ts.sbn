@@ -1,0 +1,178 @@
+{{~
+  has_text = false
+  has_textarea = false
+  has_number = false
+  has_toggle = false
+  has_datetime = false
+  has_select = false
+  for f in form_fields
+    if f.control == 'textarea'
+      has_textarea = true
+    else if f.control == 'number'
+      has_number = true
+    else if f.control == 'checkbox'
+      has_toggle = true
+    else if f.control == 'datetime'
+      has_datetime = true
+    else if f.control == 'select'
+      has_select = true
+    else
+      has_text = true
+    end
+  end
+~}}
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { AlertComponent } from '../../../shared/ui/alert.component';
+import { FormFieldComponent } from '../../../shared/ui/form-field.component';
+{{~ if has_text }}
+import { TextInputComponent } from '../../../shared/ui/text-input.component';
+{{~ end }}
+{{~ if has_textarea }}
+import { TextAreaInputComponent } from '../../../shared/ui/text-area-input.component';
+{{~ end }}
+{{~ if has_number }}
+import { NumberInputComponent } from '../../../shared/ui/number-input.component';
+{{~ end }}
+{{~ if has_toggle }}
+import { ToggleInputComponent } from '../../../shared/ui/toggle-input.component';
+{{~ end }}
+{{~ if has_datetime }}
+import { DateTimeInputComponent } from '../../../shared/ui/date-time-input.component';
+{{~ end }}
+{{~ if has_select }}
+import { SelectInputComponent } from '../../../shared/ui/select-input.component';
+{{~ end }}
+{{~ if has_relations }}
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ for r in relations }}get{{ r.entity_name }}Options, type {{ r.entity_name }}Option{{ if !for.last }}, {{ end }}{{ end }} } from '../api/{{ folder_name }}.api';
+{{~ end }}
+import {
+  empty{{ entity_name }}FormValues,
+  to{{ entity_name }}FormValues,
+  to{{ entity_name }}Input,
+  type {{ entity_name }},
+  type {{ entity_name }}FormValues,
+} from '../model/{{ file_stem }}.types';
+import { validate{{ entity_name }}, type {{ entity_name }}Errors } from '../model/{{ file_stem }}.validation';
+import { {{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+@Component({
+  selector: 'app-{{ file_stem }}-form',
+  imports: [AlertComponent, FormFieldComponent{{ if has_text }}, TextInputComponent{{ end }}{{ if has_textarea }}, TextAreaInputComponent{{ end }}{{ if has_number }}, NumberInputComponent{{ end }}{{ if has_toggle }}, ToggleInputComponent{{ end }}{{ if has_datetime }}, DateTimeInputComponent{{ end }}{{ if has_select }}, SelectInputComponent{{ end }}],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <form novalidate class="space-y-4" (submit)="handleSubmit($event)">
+      <h2 class="text-lg font-semibold text-gray-900" [textContent]="id() !== undefined ? 'Edit {{ title }}' : 'New {{ title }}'"></h2>
+
+      @if (store.error(); as message) {
+        <app-alert [message]="message" (dismissed)="store.clearError()" />
+      }
+{{~ if has_relations }}
+      @if (lookupError(); as message) {
+        <app-alert [message]="message" (dismissed)="lookupError.set(null)" />
+      }
+{{~ end }}
+{{~ for f in form_fields }}
+
+      <app-form-field fieldId="{{ f.key }}" label="{{ f.label }}"{{ if f.is_required }} [required]="true"{{ end }} [error]="errors().{{ f.key }}">
+{{~ if f.control == 'textarea' }}
+        <app-text-area-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" (valueChange)="setValue('{{ f.key }}', $event)" [invalid]="!!errors().{{ f.key }}"{{ if f.max_length }} [maxLength]="{{ f.max_length }}"{{ end }} />
+{{~ else if f.control == 'number' }}
+        <app-number-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" (valueChange)="setValue('{{ f.key }}', $event)" [invalid]="!!errors().{{ f.key }}" />
+{{~ else if f.control == 'checkbox' }}
+        <app-toggle-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" (valueChange)="setValue('{{ f.key }}', $event)" />
+{{~ else if f.control == 'datetime' }}
+        <app-date-time-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" (valueChange)="setValue('{{ f.key }}', $event)" [invalid]="!!errors().{{ f.key }}" />
+{{~ else if f.control == 'select' }}
+{{~ if f.is_number }}
+        <app-select-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" [options]="{{ f.relation.camel_name }}Options()" (valueChange)="setValue('{{ f.key }}', $event === '' ? null : $event)" [invalid]="!!errors().{{ f.key }}" />
+{{~ else }}
+        <app-select-input fieldId="{{ f.key }}" [value]="values().{{ f.key }}" [options]="{{ f.relation.camel_name }}Options()" (valueChange)="setValue('{{ f.key }}', $event ?? '')" [invalid]="!!errors().{{ f.key }}" />
+{{~ end }}
+{{~ else }}
+        <app-text-input fieldId="{{ f.key }}" type="{{ if f.control == 'time' }}time{{ else if f.control == 'email' }}email{{ else if f.control == 'password' }}password{{ else }}text{{ end }}" [value]="values().{{ f.key }}" (valueChange)="setValue('{{ f.key }}', $event)" [invalid]="!!errors().{{ f.key }}"{{ if f.max_length }} [maxLength]="{{ f.max_length }}"{{ end }} />
+{{~ end }}
+      </app-form-field>
+{{~ end }}
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" (click)="cancelled.emit()">Cancel</button>
+        <button type="submit" [disabled]="store.isLoading()" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50" [textContent]="store.isLoading() ? 'Saving...' : 'Save'"></button>
+      </div>
+    </form>
+  `,
+})
+export class {{ entity_name }}FormComponent {
+  protected readonly store = inject({{ plural_name }}Store);
+
+  /** When provided the form edits that record; otherwise it creates a new one. */
+  readonly id = input<{{ primary_key.ts_type }} | undefined>(undefined);
+  readonly saved = output<{{ entity_name }}>();
+  readonly cancelled = output<void>();
+
+  protected readonly values = signal<{{ entity_name }}FormValues>({ ...empty{{ entity_name }}FormValues });
+  protected readonly errors = signal<{{ entity_name }}Errors>({});
+{{~ if has_relations }}
+  protected readonly lookupError = signal<string | null>(null);
+{{~ for r in relations }}
+  protected readonly {{ r.camel_name }}Options = signal<{{ r.entity_name }}Option[]>([]);
+{{~ end }}
+{{~ end }}
+
+  constructor() {
+    this.store.clearError();
+
+    effect(() => {
+      const id = this.id();
+      if (id !== undefined) {
+        untracked(() => void this.load(id));
+      }
+    });
+{{~ if has_relations }}
+
+    const controller = new AbortController();
+    inject(DestroyRef).onDestroy(() => controller.abort());
+
+    const report = (cause: unknown) => {
+      if (!controller.signal.aborted) {
+        this.lookupError.set(toErrorMessage(cause));
+      }
+    };
+{{~ for r in relations }}
+
+    get{{ r.entity_name }}Options(controller.signal).then((options) => this.{{ r.camel_name }}Options.set(options)).catch(report);
+{{~ end }}
+{{~ end }}
+  }
+
+  protected setValue<K extends keyof {{ entity_name }}FormValues>(key: K, value: {{ entity_name }}FormValues[K]): void {
+    this.values.update((current) => ({ ...current, [key]: value }));
+  }
+
+  protected async handleSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+
+    const validation = validate{{ entity_name }}(this.values());
+    this.errors.set(validation);
+
+    if (Object.keys(validation).length > 0) {
+      return;
+    }
+
+    const input = to{{ entity_name }}Input(this.values());
+    const id = this.id();
+    const saved = id !== undefined ? await this.store.update(id, input) : await this.store.create(input);
+
+    if (saved) {
+      this.saved.emit(saved);
+    }
+  }
+
+  private async load(id: {{ primary_key.ts_type }}): Promise<void> {
+    const entity = await this.store.fetchById(id);
+
+    if (entity) {
+      this.values.set(to{{ entity_name }}FormValues(entity));
+    }
+  }
+}

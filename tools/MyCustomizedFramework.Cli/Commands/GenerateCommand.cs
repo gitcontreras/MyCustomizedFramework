@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using MyCustomizedFramework.Application.Abstractions.CodeGeneration;
 using MyCustomizedFramework.Application.CrudGeneration;
+using MyCustomizedFramework.Application.FrontendGeneration;
 using MyCustomizedFramework.Application.SchemaExplorer;
 using MyCustomizedFramework.Cli.Configuration;
 using MyCustomizedFramework.Cli.Writing;
@@ -45,15 +47,35 @@ internal static class GenerateCommand
             return 1;
         }
 
-        if (config is null || config.Paths.Count == 0)
+        var frontendOnly = options.ContainsKey("frontend-only");
+        var withFrontend = frontendOnly || options.ContainsKey("with-frontend");
+
+        FrontendOptions? frontend = null;
+        if (withFrontend)
+        {
+            frontend = FrontendOptionsResolver.Resolve(config?.Frontend, options, out var frontendError);
+            if (frontend is null)
+            {
+                Console.Error.WriteLine($"Error: {frontendError}");
+                return 1;
+            }
+        }
+
+        if (!frontendOnly && (config is null || config.Paths.Count == 0))
         {
             Console.Error.WriteLine("No 'paths' mapping found. Run 'crudgen init' and fill in crudgen.config.json first.");
             return 1;
         }
 
-        var rootNamespace = options.GetValueOrDefault("root-namespace") ?? config.RootNamespace ?? "MyCustomizedFramework";
+        var rootNamespace = options.GetValueOrDefault("root-namespace") ?? config?.RootNamespace ?? "MyCustomizedFramework";
         var repoRoot = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
         var force = options.ContainsKey("force");
+
+        var paths = new Dictionary<string, string>(config?.Paths ?? [], StringComparer.OrdinalIgnoreCase);
+        if (frontend is not null)
+        {
+            paths[FrontendOptionsResolver.BucketName] = frontend.Path;
+        }
 
         await using var provider = new ServiceCollection().AddInfrastructure().BuildServiceProvider();
 
@@ -93,9 +115,31 @@ internal static class GenerateCommand
         }
 
         var generateHandler = provider.GetRequiredService<GenerateCrudHandler>();
+        var frontendHandler = provider.GetRequiredService<GenerateFrontendHandler>();
+
+        var frontendGeneration = frontend is null
+            ? null
+            : new FrontendGenerationOptions(frontend.Framework, frontend.StateManagement, frontend.Styles, frontend.ApiBaseUrl);
 
         var totalWritten = 0;
         var totalSkipped = 0;
+
+        if (frontendGeneration is not null)
+        {
+            var kernel = provider.GetRequiredService<GenerateFrontendKernelHandler>().Handle(frontendGeneration);
+            if (kernel.IsFailure)
+            {
+                Console.Error.WriteLine($"Error: {kernel.Error.Code}: {kernel.Error.Message}");
+                return 1;
+            }
+
+            Console.WriteLine("== frontend shared kernel ==");
+            var kernelWrite = GeneratedFileWriter.Write(kernel.Value, paths, repoRoot, force);
+            PrintWrite(kernelWrite);
+            totalWritten += kernelWrite.Written.Count;
+            totalSkipped += kernelWrite.Skipped.Count;
+        }
+
         var failedTables = new List<string>();
 
         foreach (var table in tables)
@@ -103,20 +147,42 @@ internal static class GenerateCommand
             var label = table.Schema is null ? table.Name : $"{table.Schema}.{table.Name}";
             Console.WriteLine($"== {label} ==");
 
-            var result = await generateHandler.HandleAsync(
-                new GenerateCrudQuery(connectionDetails, engineResult.Value, table.Schema, table.Name, rootNamespace));
+            var tableFiles = new List<GeneratedFile>();
 
-            if (result.IsFailure)
+            if (!frontendOnly)
             {
-                Console.Error.WriteLine($"  skipped table (error): {result.Error.Code}: {result.Error.Message}");
-                failedTables.Add(label);
-                continue;
+                var result = await generateHandler.HandleAsync(
+                    new GenerateCrudQuery(connectionDetails, engineResult.Value, table.Schema, table.Name, rootNamespace));
+
+                if (result.IsFailure)
+                {
+                    Console.Error.WriteLine($"  skipped table (error): {result.Error.Code}: {result.Error.Message}");
+                    failedTables.Add(label);
+                    continue;
+                }
+
+                tableFiles.AddRange(result.Value);
+            }
+
+            if (frontendGeneration is not null)
+            {
+                var webResult = await frontendHandler.HandleAsync(
+                    new GenerateFrontendQuery(connectionDetails, engineResult.Value, table.Schema, table.Name, frontendGeneration));
+
+                if (webResult.IsFailure)
+                {
+                    Console.Error.WriteLine($"  skipped frontend (error): {webResult.Error.Code}: {webResult.Error.Message}");
+                    failedTables.Add(label);
+                    continue;
+                }
+
+                tableFiles.AddRange(webResult.Value);
             }
 
             WriteResult writeResult;
             try
             {
-                writeResult = GeneratedFileWriter.Write(result.Value, config.Paths, repoRoot, force);
+                writeResult = GeneratedFileWriter.Write(tableFiles, paths, repoRoot, force);
             }
             catch (InvalidOperationException exception)
             {
@@ -125,18 +191,17 @@ internal static class GenerateCommand
                 continue;
             }
 
-            foreach (var path in writeResult.Written)
-            {
-                Console.WriteLine($"  written: {path}");
-            }
-
-            foreach (var path in writeResult.Skipped)
-            {
-                Console.WriteLine($"  skipped (already exists, use --force to overwrite): {path}");
-            }
-
+            PrintWrite(writeResult);
             totalWritten += writeResult.Written.Count;
             totalSkipped += writeResult.Skipped.Count;
+        }
+        if (frontend is not null)
+        {
+            var barrel = FrontendRoutesBarrel.Write(Path.Combine(repoRoot, frontend.Path), frontend.Framework);
+            if (barrel is not null)
+            {
+                Console.WriteLine($"  routes barrel: {barrel}");
+            }
         }
 
         var succeeded = tables.Length - failedTables.Count;
@@ -150,4 +215,19 @@ internal static class GenerateCommand
 
         return succeeded == 0 ? 1 : 0;
     }
+
+    private static void PrintWrite(WriteResult writeResult)
+    {
+        foreach (var path in writeResult.Written)
+        {
+            Console.WriteLine($"  written: {path}");
+        }
+
+        foreach (var path in writeResult.Skipped)
+        {
+            Console.WriteLine($"  skipped (already exists, use --force to overwrite): {path}");
+        }
+    }
 }
+
+

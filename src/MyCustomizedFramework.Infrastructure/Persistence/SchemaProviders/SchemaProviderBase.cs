@@ -60,8 +60,28 @@ internal abstract class SchemaProviderBase : ISchemaProvider
                     MapToCSharpType(row.DataType, isNullable),
                     isNullable,
                     primaryKeyNames.Contains(row.Name),
-                    row.OrdinalPosition);
+                    row.OrdinalPosition,
+                    row.MaxLength);
             })
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyCollection<TableForeignKey>> GetForeignKeysAsync(
+        DatabaseConnectionDetails connection,
+        string? schema,
+        string tableName,
+        CancellationToken cancellationToken = default)
+    {
+        using var dbConnection = CreateConnection(connection);
+
+        var command = new CommandDefinition(
+            ForeignKeysQuery,
+            new { Schema = schema, TableName = tableName },
+            cancellationToken: cancellationToken);
+        var rows = await dbConnection.QueryAsync<ForeignKeyRow>(command);
+
+        return rows
+            .Select(row => TableForeignKey.Create(row.ColumnName, row.ReferencedSchema, row.ReferencedTable, row.ReferencedColumn))
             .ToArray();
     }
 
@@ -72,6 +92,9 @@ internal abstract class SchemaProviderBase : ISchemaProvider
     protected abstract string ColumnsQuery { get; }
 
     protected abstract string PrimaryKeyColumnsQuery { get; }
+
+    /// <summary>Must return only single-column foreign keys, projecting ColumnName, ReferencedSchema, ReferencedTable, ReferencedColumn.</summary>
+    protected abstract string ForeignKeysQuery { get; }
 
     protected abstract string MapToCSharpType(string dataType, bool isNullable);
 
@@ -85,5 +108,7 @@ internal abstract class SchemaProviderBase : ISchemaProvider
     /// Dapper's constructor-based materialization don't reliably coerce int -&gt; bool, so every engine's
     /// ColumnsQuery must project a real 0/1 here and the base class converts it to bool afterwards.
     /// </summary>
-    protected sealed record ColumnRow(string Name, string DataType, int IsNullable, int OrdinalPosition);
+    protected sealed record ColumnRow(string Name, string DataType, int IsNullable, int OrdinalPosition, int? MaxLength);
+
+    protected sealed record ForeignKeyRow(string ColumnName, string? ReferencedSchema, string ReferencedTable, string ReferencedColumn);
 }

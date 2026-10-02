@@ -1,0 +1,13 @@
+import type { RouteObject } from 'react-router-dom';
+import { {{ entity_name }}CreatePage } from './pages/{{ entity_name }}CreatePage';
+import { {{ entity_name }}DetailPage } from './pages/{{ entity_name }}DetailPage';
+import { {{ entity_name }}EditPage } from './pages/{{ entity_name }}EditPage';
+import { {{ plural_name }}Page } from './pages/{{ plural_name }}Page';
+
+/** Spread into your router config, e.g. createBrowserRouter([...{{ plural_camel_name }}Routes]). */
+export const {{ plural_camel_name }}Routes: RouteObject[] = [
+  { path: '/{{ route_segment }}', element: <{{ plural_name }}Page /> },
+  { path: '/{{ route_segment }}/new', element: <{{ entity_name }}CreatePage /> },
+  { path: '/{{ route_segment }}/:id', element: <{{ entity_name }}DetailPage /> },
+  { path: '/{{ route_segment }}/:id/edit', element: <{{ entity_name }}EditPage /> },
+];

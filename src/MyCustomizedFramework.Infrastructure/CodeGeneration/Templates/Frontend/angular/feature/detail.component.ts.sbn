@@ -1,0 +1,67 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, output, untracked } from '@angular/core';
+import { AlertComponent } from '../../../shared/ui/alert.component';
+import { {{ plural_name }}Store } from '../store/{{ folder_name }}.store';
+
+@Component({
+  selector: 'app-{{ file_stem }}-detail',
+  imports: [AlertComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-gray-900">{{ title }}</h2>
+
+      @if (store.error(); as message) {
+        <app-alert [message]="message" (dismissed)="store.clearError()" />
+      }
+      @if (store.isLoading() && !store.selected()) {
+        <p class="text-sm text-gray-500">Loading...</p>
+      }
+
+      @if (store.selected(); as item) {
+        <dl class="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white text-sm">
+{{~ for f in fields }}
+          <div class="grid grid-cols-3 gap-4 px-4 py-3">
+            <dt class="font-medium text-gray-600">{{ f.label }}</dt>
+{{~ if f.is_boolean }}
+            <dd class="col-span-2 text-gray-900" [textContent]="item.{{ f.key }} ? 'Yes' : 'No'"></dd>
+{{~ else if f.control == 'datetime' }}
+            <dd class="col-span-2 text-gray-900" [textContent]="formatDate(item.{{ f.key }})"></dd>
+{{~ else if f.control == 'none' }}
+            <dd class="col-span-2 text-gray-500">(binary)</dd>
+{{~ else if f.control == 'password' }}
+            <dd class="col-span-2 text-gray-500">********</dd>
+{{~ else }}
+            <dd class="col-span-2 whitespace-pre-wrap text-gray-900" [textContent]="item.{{ f.key }}{{ if f.is_nullable }} ?? ''{{ end }}"></dd>
+{{~ end }}
+          </div>
+{{~ end }}
+        </dl>
+      }
+
+      <div class="flex gap-3">
+        <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" (click)="back.emit()">Back</button>
+        <button type="button" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" (click)="edit.emit()">Edit</button>
+      </div>
+    </div>
+  `,
+})
+export class {{ entity_name }}DetailComponent {
+  protected readonly store = inject({{ plural_name }}Store);
+
+  readonly id = input.required<{{ primary_key.ts_type }}>();
+  readonly edit = output<void>();
+  readonly back = output<void>();
+
+  constructor() {
+    effect(() => {
+      const id = this.id();
+      untracked(() => void this.store.fetchById(id));
+    });
+
+    inject(DestroyRef).onDestroy(() => this.store.clearSelected());
+  }
+
+  protected formatDate(value: string | null): string {
+    return value ? new Date(value).toLocaleString() : '';
+  }
+}

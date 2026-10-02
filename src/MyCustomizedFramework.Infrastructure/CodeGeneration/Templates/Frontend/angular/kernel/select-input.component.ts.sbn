@@ -1,0 +1,42 @@
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { inputClassName } from './form-classes';
+
+export interface SelectOption<T extends string | number> {
+  value: T;
+  label: string;
+}
+
+@Component({
+  selector: 'app-select-input',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <select
+      [id]="fieldId()"
+      [disabled]="disabled()"
+      [attr.aria-invalid]="invalid() || null"
+      [attr.aria-describedby]="invalid() ? fieldId() + '-error' : null"
+      [class]="inputClass"
+      (change)="onChange($event)"
+    >
+      <option value="" [selected]="value() === null || value() === ''" [textContent]="placeholder()"></option>
+      @for (option of options(); track option.value) {
+        <option [value]="option.value" [selected]="option.value === value()" [textContent]="option.label"></option>
+      }
+    </select>
+  `,
+})
+export class SelectInputComponent<T extends string | number> {
+  readonly fieldId = input.required<string>();
+  readonly options = input.required<SelectOption<T>[]>();
+  readonly placeholder = input('Select...');
+  readonly invalid = input(false);
+  readonly disabled = input(false);
+  readonly value = model.required<T | null | ''>();
+  protected readonly inputClass = inputClassName;
+
+  protected onChange(event: Event): void {
+    const raw = (event.target as HTMLSelectElement).value;
+    const selected = this.options().find((option) => String(option.value) === raw);
+    this.value.set(selected ? selected.value : null);
+  }
+}

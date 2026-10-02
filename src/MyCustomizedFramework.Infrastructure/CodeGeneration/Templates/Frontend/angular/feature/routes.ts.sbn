@@ -1,0 +1,9 @@
+import type { Routes } from '@angular/router';
+
+/** Spread into your router config, e.g. provideRouter([...{{ plural_camel_name }}Routes]). */
+export const {{ plural_camel_name }}Routes: Routes = [
+  { path: '{{ route_segment }}', loadComponent: () => import('./pages/{{ folder_name }}.page').then((m) => m.{{ plural_name }}Page) },
+  { path: '{{ route_segment }}/new', loadComponent: () => import('./pages/{{ file_stem }}-create.page').then((m) => m.{{ entity_name }}CreatePage) },
+  { path: '{{ route_segment }}/:id', loadComponent: () => import('./pages/{{ file_stem }}-detail.page').then((m) => m.{{ entity_name }}DetailPage) },
+  { path: '{{ route_segment }}/:id/edit', loadComponent: () => import('./pages/{{ file_stem }}-edit.page').then((m) => m.{{ entity_name }}EditPage) },
+];

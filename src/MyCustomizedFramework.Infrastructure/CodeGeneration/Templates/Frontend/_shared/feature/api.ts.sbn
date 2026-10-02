@@ -1,0 +1,31 @@
+import { http } from '../../../shared/api/http-client';
+import type { {{ entity_name }}, {{ entity_name }}Input } from '../model/{{ file_stem }}.types';
+
+const BASE_PATH = '/{{ route_segment }}';
+
+const itemPath = (id: {{ primary_key.ts_type }}) => `${BASE_PATH}/${encodeURIComponent(String(id))}`;
+
+export const {{ plural_camel_name }}Api = {
+  getAll: (signal?: AbortSignal) => http.get<{{ entity_name }}[]>(BASE_PATH, signal),
+  getById: (id: {{ primary_key.ts_type }}, signal?: AbortSignal) => http.get<{{ entity_name }}>(itemPath(id), signal),
+  create: (input: {{ entity_name }}Input) => http.post<{{ entity_name }}>(BASE_PATH, input),
+  update: (id: {{ primary_key.ts_type }}, input: {{ entity_name }}Input) => http.put<{{ entity_name }}>(itemPath(id), input),
+  remove: (id: {{ primary_key.ts_type }}) => http.delete(itemPath(id)),
+};
+{{~ for r in relations }}
+
+export interface {{ r.entity_name }}Option {
+  value: {{ r.value_ts_type }};
+  label: string;
+}
+
+/** Options for the {{ r.entity_name }} dropdown; requires the /{{ r.route_segment }} endpoint to exist. */
+export async function get{{ r.entity_name }}Options(signal?: AbortSignal): Promise<{{ r.entity_name }}Option[]> {
+  const rows = await http.get<Array<Record<string, unknown>>>('/{{ r.route_segment }}', signal);
+
+  return rows.map((row) => ({
+    value: row['{{ r.value_key }}'] as {{ r.value_ts_type }},
+    label: String(row['{{ r.label_key }}'] ?? row['{{ r.value_key }}']),
+  }));
+}
+{{~ end }}

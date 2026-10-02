@@ -1,0 +1,26 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { {{ entity_name }}ListComponent } from '../components/{{ file_stem }}-list.component';
+
+@Component({
+  selector: 'app-{{ folder_name }}-page',
+  imports: [{{ entity_name }}ListComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="mx-auto max-w-5xl p-6">
+      <app-{{ file_stem }}-list (create)="go('new')" (view)="go($event)" (edit)="go($event, 'edit')" />
+    </section>
+  `,
+})
+export class {{ plural_name }}Page {
+  private readonly router = inject(Router);
+
+  protected go(id: string | number, suffix?: string): void {
+    const segments = ['/{{ route_segment }}', String(id)];
+    if (suffix) {
+      segments.push(suffix);
+    }
+
+    void this.router.navigate(segments);
+  }
+}

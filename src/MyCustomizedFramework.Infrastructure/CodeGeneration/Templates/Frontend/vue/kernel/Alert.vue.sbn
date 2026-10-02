@@ -1,0 +1,11 @@
+<script setup lang="ts">
+defineProps<{ message: string }>();
+const emit = defineEmits<{ dismiss: [] }>();
+</script>
+
+<template>
+  <div role="alert" class="flex items-start justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <span v-text="message" />
+    <button type="button" class="ml-4 font-medium underline" @click="emit('dismiss')">Dismiss</button>
+  </div>
+</template>

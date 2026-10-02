@@ -1,0 +1,37 @@
+import { inputClassName } from './FormField';
+
+interface DateTimeInputProps {
+  id: string;
+  /** ISO 8601 string, or '' when empty. */
+  value: string;
+  onChange: (value: string) => void;
+  invalid?: boolean;
+  disabled?: boolean;
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+function toLocalInputValue(iso: string): string {
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function DateTimeInput({ id, value, onChange, invalid, disabled }: DateTimeInputProps) {
+  return (
+    <input
+      id={id}
+      type="datetime-local"
+      value={toLocalInputValue(value)}
+      disabled={disabled}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${id}-error` : undefined}
+      className={inputClassName}
+      onChange={(event) => onChange(event.target.value === '' ? '' : new Date(event.target.value).toISOString())}
+    />
+  );
+}

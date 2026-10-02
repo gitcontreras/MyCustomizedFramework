@@ -1,0 +1,81 @@
+import { Injectable, computed, signal } from '@angular/core';
+import { toErrorMessage } from '../../../shared/api/api-error';
+import { {{ plural_camel_name }}Api } from '../api/{{ folder_name }}.api';
+import type { {{ entity_name }}, {{ entity_name }}Input } from '../model/{{ file_stem }}.types';
+
+type Id = {{ primary_key.ts_type }};
+
+@Injectable({ providedIn: 'root' })
+export class {{ plural_name }}Store {
+  private readonly _items = signal<{{ entity_name }}[]>([]);
+  private readonly _selected = signal<{{ entity_name }} | null>(null);
+  private readonly _isLoading = signal(false);
+  private readonly _error = signal<string | null>(null);
+
+  readonly items = this._items.asReadonly();
+  readonly selected = this._selected.asReadonly();
+  readonly isLoading = this._isLoading.asReadonly();
+  readonly error = this._error.asReadonly();
+  readonly count = computed(() => this._items().length);
+
+  async fetchAll(): Promise<void> {
+    await this.run(async () => {
+      this._items.set(await {{ plural_camel_name }}Api.getAll());
+    }, undefined);
+  }
+
+  fetchById(id: Id): Promise<{{ entity_name }} | null> {
+    return this.run(async () => {
+      const selected = await {{ plural_camel_name }}Api.getById(id);
+      this._selected.set(selected);
+      return selected;
+    }, null);
+  }
+
+  create(input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> {
+    return this.run(async () => {
+      const created = await {{ plural_camel_name }}Api.create(input);
+      this._items.update((items) => [...items, created]);
+      return created;
+    }, null);
+  }
+
+  update(id: Id, input: {{ entity_name }}Input): Promise<{{ entity_name }} | null> {
+    return this.run(async () => {
+      const updated = await {{ plural_camel_name }}Api.update(id, input);
+      this._items.update((items) => items.map((item) => (item.{{ primary_key.key }} === id ? updated : item)));
+      this._selected.set(updated);
+      return updated;
+    }, null);
+  }
+
+  remove(id: Id): Promise<boolean> {
+    return this.run(async () => {
+      await {{ plural_camel_name }}Api.remove(id);
+      this._items.update((items) => items.filter((item) => item.{{ primary_key.key }} !== id));
+      return true;
+    }, false);
+  }
+
+  clearError(): void {
+    this._error.set(null);
+  }
+
+  clearSelected(): void {
+    this._selected.set(null);
+  }
+
+  private async run<T>(action: () => Promise<T>, onError: T): Promise<T> {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    try {
+      return await action();
+    } catch (cause) {
+      this._error.set(toErrorMessage(cause));
+      return onError;
+    } finally {
+      this._isLoading.set(false);
+    }
+  }
+}
