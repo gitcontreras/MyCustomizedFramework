@@ -4,6 +4,7 @@ import { {{ entity_name }}FormComponent } from '../components/{{ file_stem }}-fo
 
 @Component({
   selector: 'app-{{ file_stem }}-create-page',
+  standalone: true,
   imports: [{{ entity_name }}FormComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

@@ -5,6 +5,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 @Component({
   selector: 'app-date-time-input',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <input

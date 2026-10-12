@@ -4,6 +4,7 @@ import { {{ entity_name }}ListComponent } from '../components/{{ file_stem }}-li
 
 @Component({
   selector: 'app-{{ folder_name }}-page',
+  standalone: true,
   imports: [{{ entity_name }}ListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

@@ -62,8 +62,26 @@ public sealed class ScribanFrontendFileGeneratorTests
         Assert.Null(generator.GetUnsupportedReason(Vue));
         Assert.Null(generator.GetUnsupportedReason(React));
     }
-}
 
+    [Theory]
+    [InlineData("signals")]
+    [InlineData("ngrx")]
+    public void AngularComponentsAreStandaloneAndUseSignalState(string stateManagement)
+    {
+        var generator = new ScribanFrontendFileGenerator();
+        var options = Angular with { StateManagement = stateManagement };
+        var files = generator.Generate(Students, options);
+        var components = files.Where(file =>
+            file.RelativePath.EndsWith(".component.ts", StringComparison.Ordinal)
+            || file.RelativePath.EndsWith(".page.ts", StringComparison.Ordinal));
+
+        Assert.NotEmpty(components);
+        Assert.All(components, file => Assert.Contains("standalone: true", file.Content, StringComparison.Ordinal));
+
+        var store = Assert.Single(files, file => file.RelativePath.EndsWith(".store.ts", StringComparison.Ordinal));
+        Assert.Contains(stateManagement == "signals" ? "signal(" : "signalStore(", store.Content, StringComparison.Ordinal);
+    }
+}
 
 
 

@@ -4,6 +4,7 @@ import { {{ plural_name }}Store } from '../store/{{ folder_name }}.store';
 
 @Component({
   selector: 'app-{{ file_stem }}-detail',
+  standalone: true,
   imports: [AlertComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

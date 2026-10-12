@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
 
 @Component({
   selector: 'app-toggle-input',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button

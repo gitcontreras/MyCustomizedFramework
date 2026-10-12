@@ -6,6 +6,7 @@ import { {{ entity_name }}DetailComponent } from '../components/{{ file_stem }}-
 
 @Component({
   selector: 'app-{{ file_stem }}-detail-page',
+  standalone: true,
   imports: [{{ entity_name }}DetailComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

@@ -3,6 +3,7 @@ import { inputClassName } from './form-classes';
 
 @Component({
   selector: 'app-text-area-input',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <textarea

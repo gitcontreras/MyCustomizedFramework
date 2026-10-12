@@ -58,6 +58,7 @@ import { {{ plural_name }}Store } from '../store/{{ folder_name }}.store';
 
 @Component({
   selector: 'app-{{ file_stem }}-form',
+  standalone: true,
   imports: [AlertComponent, FormFieldComponent{{ if has_text }}, TextInputComponent{{ end }}{{ if has_textarea }}, TextAreaInputComponent{{ end }}{{ if has_number }}, NumberInputComponent{{ end }}{{ if has_toggle }}, ToggleInputComponent{{ end }}{{ if has_datetime }}, DateTimeInputComponent{{ end }}{{ if has_select }}, SelectInputComponent{{ end }}],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

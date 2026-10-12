@@ -8,6 +8,7 @@ export interface SelectOption<T extends string | number> {
 
 @Component({
   selector: 'app-select-input',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <select
